@@ -1,0 +1,34 @@
+modifyPom {
+    project {
+        name 'merry-ds'
+        description "Alternative data structures to libGDX's ObjectMap, ObjectSet, and relatives."
+        url 'https://github.com/tommyettinger/merry-ds'
+        inceptionYear '2019'
+
+        scm {
+            url 'https://github.com/tommyettinger/merry-ds'
+            connection 'scm:https://tommyettinger@github.com/tommyettinger/merry-ds.git'
+            developerConnection 'scm:git://github.com/tommyettinger/merry-ds.git'
+        }
+
+        licenses {
+            license {
+                name 'Apache Public License'
+                url 'https://www.apache.org/licenses/LICENSE-2.0.html'
+                distribution 'repo'
+            }
+        }
+
+        developers {
+            developer {
+                id 'tommyettinger'
+                name 'Tommy Ettinger'
+                email 'tommy.ettinger@gmail.com'
+            }
+        }
+    }
+}
+
+nexusStaging {
+    packageGroup = 'com.github.tommyettinger'
+}
