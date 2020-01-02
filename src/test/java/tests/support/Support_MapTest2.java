@@ -17,7 +17,7 @@
 
 package tests.support;
 
-import java.util.Map;
+import com.github.tommyettinger.merry.MerryObjectMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -25,9 +25,9 @@ import static org.junit.Assert.fail;
 
 public class Support_MapTest2 {
 
-	Map<String, String> map;
+	MerryObjectMap<String, String> map;
 
-	public Support_MapTest2(Map<String, String> m) {
+	public Support_MapTest2(MerryObjectMap<String, String> m) {
 		map = m;
 		if (!map.isEmpty()) {
 			fail("Map must be empty");
@@ -37,12 +37,12 @@ public class Support_MapTest2 {
     public void runTest() {
 		try {
 			map.put("one", "1");
-			assertEquals("size should be one", 1, map.size());
+			assertEquals("size should be one", 1, map.size);
 			map.clear();
-			assertEquals("size should be zero", 0, map.size());
-			assertTrue("Should not have entries", !map.entrySet().iterator()
+			assertEquals("size should be zero", 0, map.size);
+			assertTrue("Should not have entries", !map.entries().iterator()
 					.hasNext());
-			assertTrue("Should not have keys", !map.keySet().iterator()
+			assertTrue("Should not have keys", !map.keys().iterator()
 					.hasNext());
 			assertTrue("Should not have values", !map.values().iterator()
 					.hasNext());
@@ -51,12 +51,12 @@ public class Support_MapTest2 {
 
 		try {
 			map.put("one", "1");
-			assertEquals("size should be one", 1, map.size());
+			assertEquals("size should be one", 1, map.size);
 			map.remove("one");
-			assertEquals("size should be zero", 0, map.size());
-			assertTrue("Should not have entries", !map.entrySet().iterator()
+			assertEquals("size should be zero", 0, map.size);
+			assertTrue("Should not have entries", !map.entries().iterator()
 					.hasNext());
-			assertTrue("Should not have keys", !map.keySet().iterator()
+			assertTrue("Should not have keys", !map.keys().iterator()
 					.hasNext());
 			assertTrue("Should not have values", !map.values().iterator()
 					.hasNext());

@@ -321,7 +321,7 @@ public class MerryObjectSet<T> implements Iterable<T> {
 		}
 		T[] keyTable = this.keyTable;
 		keyTable[loc] = null;
-		for (int i = (loc + 1) & mask; (keyTable[i] != null && (i - ib[loc] & mask) != 0); i = (i + 1) & mask) {
+		for (int i = (loc + 1) & mask; (keyTable[i] != null && (i - ib[i] & mask) != 0); i = (i + 1) & mask) {
 			keyTable[i - 1 & mask] = keyTable[i];
 			ib[i - 1 & mask] = ib[i];
 			keyTable[i] = null;
@@ -527,7 +527,7 @@ public class MerryObjectSet<T> implements Iterable<T> {
 			int[] ib = set.ib;
 			int mask = set.mask;
 			keyTable[currentIndex] = null;
-			for (int i = (currentIndex + 1) & mask; (keyTable[i] != null && (i - ib[currentIndex] & mask) != 0); i = (i + 1) & mask) {
+			for (int i = (currentIndex + 1) & mask; (keyTable[i] != null && (i - ib[i] & mask) != 0); i = (i + 1) & mask) {
 				keyTable[i - 1 & mask] = keyTable[i];
 				ib[i - 1 & mask] = ib[i];
 				keyTable[i] = null;

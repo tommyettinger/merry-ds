@@ -349,7 +349,7 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 		float[] valueTable = this.valueTable;
 		keyTable[loc] = null;
 		float oldValue = valueTable[loc];
-		for (int i = (loc + 1) & mask; (keyTable[i] != null && (i - ib[loc] & mask) != 0); i = (i + 1) & mask) {
+		for (int i = (loc + 1) & mask; (keyTable[i] != null && (i - ib[i] & mask) != 0); i = (i + 1) & mask) {
 			keyTable[i - 1 & mask] = keyTable[i];
 			valueTable[i - 1 & mask] = valueTable[i];
 			ib[i - 1 & mask] = ib[i];
@@ -359,6 +359,16 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 		--size;
 		return oldValue;
 	}
+
+	 /** Returns true if the map has one or more items. */
+	 public boolean notEmpty () {
+		  return size > 0;
+	 }
+
+	 /** Returns true if the map is empty. */
+	 public boolean isEmpty () {
+		  return size == 0;
+	 }
 
 	/** Reduces the size of the backing arrays to be the specified capacity or less. If the capacity is already less, nothing is
 	 * done. If the map contains more items than the specified capacity, the next highest power of two capacity is used instead. */
@@ -624,7 +634,7 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 			int[] ib = map.ib;
 			int mask = map.mask;
 			keyTable[currentIndex] = null;
-			for (int i = (currentIndex + 1) & mask; (keyTable[i] != null && (i - ib[currentIndex] & mask) != 0); i = (i + 1) & mask) {
+			for (int i = (currentIndex + 1) & mask; (keyTable[i] != null && (i - ib[i] & mask) != 0); i = (i + 1) & mask) {
 				keyTable[i - 1 & mask] = keyTable[i];
 				valueTable[i - 1 & mask] = valueTable[i];
 				ib[i - 1 & mask] = ib[i];

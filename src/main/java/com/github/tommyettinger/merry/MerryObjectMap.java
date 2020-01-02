@@ -331,7 +331,7 @@ public class MerryObjectMap<K, V> implements Iterable<MerryObjectMap.Entry<K, V>
 		keyTable[loc] = null;
 		V oldValue = valueTable[loc];
 		valueTable[loc] = null;
-		for (int i = (loc + 1) & mask; (keyTable[i] != null && (i - ib[loc] & mask) != 0); i = (i + 1) & mask) {
+		for (int i = (loc + 1) & mask; (keyTable[i] != null && (i - ib[i] & mask) != 0); i = (i + 1) & mask) {
 			keyTable[i - 1 & mask] = keyTable[i];
 			valueTable[i - 1 & mask] = valueTable[i];
 			ib[i - 1 & mask] = ib[i];
@@ -342,6 +342,16 @@ public class MerryObjectMap<K, V> implements Iterable<MerryObjectMap.Entry<K, V>
 		--size;
 		return oldValue;
 	}
+
+	 /** Returns true if the map has one or more items. */
+	 public boolean notEmpty () {
+		  return size > 0;
+	 }
+
+	 /** Returns true if the map is empty. */
+	 public boolean isEmpty () {
+		  return size == 0;
+	 }
 
 	/** Reduces the size of the backing arrays to be the specified capacity or less. If the capacity is already less, nothing is
 	 * done. If the map contains more items than the specified capacity, the next highest power of two capacity is used instead. */
@@ -521,18 +531,20 @@ public class MerryObjectMap<K, V> implements Iterable<MerryObjectMap.Entry<K, V>
 		while (i-- > 0) {
 			K key = keyTable[i];
 			if (key == null) continue;
-			buffer.append(key);
+			buffer.append(key == this ? "(this)" : key);
 			buffer.append('=');
-			buffer.append(valueTable[i]);
+			V value = valueTable[i];
+			buffer.append(value == this ? "(this)" : value);
 			break;
 		}
 		while (i-- > 0) {
 			K key = keyTable[i];
 			if (key == null) continue;
 			buffer.append(separator);
-			buffer.append(key);
-			buffer.append('=');
-			buffer.append(valueTable[i]);
+			 buffer.append(key == this ? "(this)" : key);
+			 buffer.append('=');
+			 V value = valueTable[i];
+			 buffer.append(value == this ? "(this)" : value);
 		}
 		if (braces) buffer.append('}');
 		return buffer.toString();
@@ -645,7 +657,7 @@ public class MerryObjectMap<K, V> implements Iterable<MerryObjectMap.Entry<K, V>
 			int mask = map.mask;
 			keyTable[currentIndex] = null;
 			valueTable[currentIndex] = null;
-			for (int i = (currentIndex + 1) & mask; (keyTable[i] != null && (i - ib[currentIndex] & mask) != 0); i = (i + 1) & mask) {
+			for (int i = (currentIndex + 1) & mask; (keyTable[i] != null && (i - ib[i] & mask) != 0); i = (i + 1) & mask) {
 				keyTable[i - 1 & mask] = keyTable[i];
 				valueTable[i - 1 & mask] = valueTable[i];
 				ib[i - 1 & mask] = ib[i];

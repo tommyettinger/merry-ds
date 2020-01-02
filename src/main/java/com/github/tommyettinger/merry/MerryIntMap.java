@@ -402,7 +402,7 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 		keyTable[loc] = 0;
 		V oldValue = valueTable[loc];
 		valueTable[loc] = null;
-		for (int i = (loc + 1) & mask; (keyTable[i] != 0 && (i - ib[loc] & mask) != 0); i = (i + 1) & mask) {
+		for (int i = (loc + 1) & mask; (keyTable[i] != 0 && (i - ib[i] & mask) != 0); i = (i + 1) & mask) {
 			keyTable[i - 1 & mask] = keyTable[i];
 			valueTable[i - 1 & mask] = valueTable[i];
 			ib[i - 1 & mask] = ib[i];
@@ -770,7 +770,7 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 				int mask = map.mask;
 				keyTable[currentIndex] = 0;
 				valueTable[currentIndex] = null;
-				for (int i = (currentIndex + 1) & mask; (keyTable[i] != 0 && (i - ib[currentIndex] & mask) != 0); i = (i + 1) & mask) {
+				for (int i = (currentIndex + 1) & mask; (keyTable[i] != 0 && (i - ib[i] & mask) != 0); i = (i + 1) & mask) {
 					keyTable[i - 1 & mask] = keyTable[i];
 					valueTable[i - 1 & mask] = valueTable[i];
 					ib[i - 1 & mask] = ib[i];
