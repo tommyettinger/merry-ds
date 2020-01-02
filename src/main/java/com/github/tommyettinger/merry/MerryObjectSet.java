@@ -367,7 +367,7 @@ public class MerryObjectSet<T> implements Iterable<T> {
 	public void clear () {
 		if (size == 0) return;
 		T[] keyTable = this.keyTable;
-		for (int i = keyTable.length - 1; i > 0;)
+		for (int i = keyTable.length; i > 0;)
 		{
 			keyTable[--i] = null;
 			ib[i] = 0;
@@ -451,14 +451,14 @@ public class MerryObjectSet<T> implements Iterable<T> {
 		while (i-- > 0) {
 			T key = keyTable[i];
 			if (key == null) continue;
-			buffer.append(key);
+			buffer.append(key == this ? "(this)" : key);
 			break;
 		}
 		while (i-- > 0) {
 			T key = keyTable[i];
 			if (key == null) continue;
 			buffer.append(separator);
-			buffer.append(key);
+			buffer.append(key == this ? "(this)" : key);
 		}
 		return buffer.toString();
 	}

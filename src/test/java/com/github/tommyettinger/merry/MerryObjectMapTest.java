@@ -18,6 +18,7 @@
 package com.github.tommyettinger.merry;
 
 import com.badlogic.gdx.utils.Array;
+import org.junit.Test;
 import tests.support.Support_MapTest2;
 
 import java.lang.reflect.InvocationHandler;
@@ -100,9 +101,7 @@ public class MerryObjectMapTest extends junit.framework.TestCase {
 		}
 	}
 
-	/**
-	 * @tests com.github.tommyettinger.merry.MerryObjectMap#MerryObjectMap()
-	 */
+	@Test
 	public void test_Constructor() {
 		// Test for method com.github.tommyettinger.merry.MerryObjectMap()
 		new Support_MapTest2(new MerryObjectMap<String, String>()).runTest();
@@ -111,9 +110,7 @@ public class MerryObjectMapTest extends junit.framework.TestCase {
 		assertEquals("Created incorrect MerryObjectMap", 0, hm2.size);
 	}
 
-	/**
-	 * @tests com.github.tommyettinger.merry.MerryObjectMap#MerryObjectMap(int)
-	 */
+	@Test
 	public void test_ConstructorI() {
 		// Test for method com.github.tommyettinger.merry.MerryObjectMap(int)
 		MerryObjectMap hm2 = new MerryObjectMap(5);
@@ -132,9 +129,7 @@ public class MerryObjectMapTest extends junit.framework.TestCase {
 		assertTrue("cannot get element", empty.get("something") == "here");
 	}
 
-	/**
-	 * @tests com.github.tommyettinger.merry.MerryObjectMap#MerryObjectMap(int, float)
-	 */
+	@Test
 	public void test_ConstructorIF() {
 		// Test for method com.github.tommyettinger.merry.MerryObjectMap(int, float)
 		MerryObjectMap hm2 = new MerryObjectMap(5, (float) 0.5);
@@ -153,9 +148,7 @@ public class MerryObjectMapTest extends junit.framework.TestCase {
 		assertTrue("cannot get element", empty.get("something") == "here");
 	}
 
-	/**
-	 * @tests com.github.tommyettinger.merry.MerryObjectMap#MerryObjectMap(com.github.tommyettinger.merry.MerryObjectMap)
-	 */
+	@Test
 	public void test_ConstructorLjava_util_Map() {
 		MerryObjectMap myMap = new MerryOrderedMap();
 		for (int counter = 0; counter < hmSize; counter++)
@@ -180,9 +173,7 @@ public class MerryObjectMapTest extends junit.framework.TestCase {
         assertTrue(map2.containsValue("a", false));
 	}
 
-	/**
-	 * @tests com.github.tommyettinger.merry.MerryObjectMap#clear()
-	 */
+	@Test
 	public void test_clear() {
 		hm.clear();
 		assertEquals("Clear failed to reset size", 0, hm.size);
@@ -202,9 +193,7 @@ public class MerryObjectMapTest extends junit.framework.TestCase {
         }
 	}
 
-	/**
-	 * @tests com.github.tommyettinger.merry.MerryObjectMap#containsKey(java.lang.Object)
-	 */
+	@Test
 	public void test_containsKeyLjava_lang_Object() {
 		// Test for method boolean
 		// com.github.tommyettinger.merry.MerryObjectMap.containsKey(java.lang.Object)
@@ -219,9 +208,7 @@ public class MerryObjectMapTest extends junit.framework.TestCase {
 //				.containsKey(new Integer(0)));
 	}
 
-	/**
-	 * @tests com.github.tommyettinger.merry.MerryObjectMap#containsValue(java.lang.Object)
-	 */
+	@Test
 	public void test_containsValueLjava_lang_Object() {
 		// Test for method boolean
 		// com.github.tommyettinger.merry.MerryObjectMap.containsValue(java.lang.Object)
@@ -231,9 +218,7 @@ public class MerryObjectMapTest extends junit.framework.TestCase {
 				.containsValue(new Integer(-9), false));
 	}
 
-	/**
-	 * @tests com.github.tommyettinger.merry.MerryObjectMap#entrySet()
-	 */
+	@Test
 	public void test_entrySet() {
 		// Test for method java.util.Set com.github.tommyettinger.merry.MerryObjectMap.entrySet(
 		MerryObjectMap.Entries s = hm.entries();
@@ -252,9 +237,7 @@ public class MerryObjectMapTest extends junit.framework.TestCase {
         assertEquals(1001, s.map.size);
 	}
 
-	/**
-	 * @tests com.github.tommyettinger.merry.MerryObjectMap#get(java.lang.Object)
-	 */
+	@Test
 	public void test_getLjava_lang_Object() {
 		// Test for method java.lang.Object
 		// com.github.tommyettinger.merry.MerryObjectMap.get(java.lang.Object)
@@ -324,18 +307,14 @@ public class MerryObjectMapTest extends junit.framework.TestCase {
 //        assertTrue("Failed to find proxy association", map.entrySet().contains(entry));
 //	}
 
-	/**
-	 * @tests com.github.tommyettinger.merry.MerryObjectMap#isEmpty()
-	 */
+	@Test
 	public void test_isEmpty() {
 		// Test for method boolean com.github.tommyettinger.merry.MerryObjectMap.isEmpty()
 		assertTrue("Returned false for new map", new MerryObjectMap().isEmpty());
 		assertTrue("Returned true for non-empty", !hm.isEmpty());
 	}
 
-	/**
-	 * @tests com.github.tommyettinger.merry.MerryObjectMap#keySet()
-	 */
+	@Test
 	public void test_keySet() {
 		// Test for method java.util.Set com.github.tommyettinger.merry.MerryObjectMap.keySet()
 		MerryObjectMap.Keys s = hm.keys();
@@ -385,9 +364,7 @@ public class MerryObjectMapTest extends junit.framework.TestCase {
 				next));
 	}
 
-	/**
-	 * @tests com.github.tommyettinger.merry.MerryObjectMap#put(java.lang.Object, java.lang.Object)
-	 */
+	@Test
 	public void test_putLjava_lang_ObjectLjava_lang_Object() {
         hm.put("KEY", "VALUE");
         assertEquals("Failed to install key/value pair", "VALUE", hm.get("KEY"));
@@ -455,9 +432,7 @@ public class MerryObjectMapTest extends junit.framework.TestCase {
             return 0;
         }
     }
-	/**
-	 * @tests com.github.tommyettinger.merry.MerryObjectMap#putAll(java.util.Map)
-	 */
+	@Test
 	public void test_putAllLjava_util_Map() {
 		// Test for method void com.github.tommyettinger.merry.MerryObjectMap.putAll(java.util.Map)
 		MerryObjectMap hm2 = new MerryObjectMap();
@@ -472,9 +447,7 @@ public class MerryObjectMapTest extends junit.framework.TestCase {
 //        assertEquals("Size should be 0", 0, hm2.size);
 	}
     
-    /**
-     * @tests com.github.tommyettinger.merry.MerryObjectMap#putAll(java.util.Map)
-     */
+    @Test
     public void test_putAllLjava_util_Map_Null() {
         MerryObjectMap hashMap = new MerryObjectMap();
         try {
@@ -492,9 +465,7 @@ public class MerryObjectMapTest extends junit.framework.TestCase {
 //        }
     } 
 
-	/**
-	 * @tests com.github.tommyettinger.merry.MerryObjectMap#remove(java.lang.Object)
-	 */
+	@Test
 	public void test_removeLjava_lang_Object() {
 		int size = hm.size;
 		Integer y = new Integer(9);
@@ -581,18 +552,14 @@ public class MerryObjectMapTest extends junit.framework.TestCase {
         }
     }
 
-	/**
-	 * @tests com.github.tommyettinger.merry.MerryObjectMap#size()
-	 */
+	@Test
 	public void test_size() {
 		// Test for method int com.github.tommyettinger.merry.MerryObjectMap.size()
 		assertTrue("Returned incorrect size",
 				hm.size == (objArray.length + 1));
 	}
 
-	/**
-	 * @tests com.github.tommyettinger.merry.MerryObjectMap#values()
-	 */
+	@Test
 	public void test_values() {
 		// Test for method java.util.Collection com.github.tommyettinger.merry.MerryObjectMap.values()
 		MerryObjectMap.Values c = hm.values();
@@ -617,10 +584,9 @@ public class MerryObjectMapTest extends junit.framework.TestCase {
 
 	}
     
-    /**
-     * @tests java.util.AbstractMap#toString()
-     */
-    public void test_toString() {
+
+	@Test 
+	public void test_toString() {
 
         MerryObjectMap m = new MerryObjectMap();
         m.put(m, m);
