@@ -17,6 +17,9 @@
 
 package com.github.tommyettinger.merry;
 
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import tests.support.Support_MapTest2;
 
@@ -24,7 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 
-public class MerryOrderedMapTest extends junit.framework.TestCase {
+public class MerryOrderedMapTest {
 
 	MerryOrderedMap hm;
 
@@ -42,60 +45,48 @@ public class MerryOrderedMapTest extends junit.framework.TestCase {
 		}
 	}
 
-	 private static class MockMapNull extends MerryOrderedMap {
-        @Override
-        public Entries entries() {
-            return null;
-        }
-		  {
-		  	 size = 10;
-		  }
- 	}
-
-	@Test
+	 @Test
 	public void test_Constructor() {
 		// Test for method com.github.tommyettinger.merry.MerryOrderedMap()
 		new Support_MapTest2(new MerryOrderedMap()).runTest();
 
 		MerryOrderedMap hm2 = new MerryOrderedMap();
-		assertEquals("Created incorrect MerryOrderedMap", 0, hm2.size);
+		Assert.assertEquals("Created incorrect MerryOrderedMap", 0, hm2.size);
 	}
 
 	@Test
 	public void test_ConstructorI() {
 		// Test for method com.github.tommyettinger.merry.MerryOrderedMap(int)
 		MerryOrderedMap hm2 = new MerryOrderedMap(5);
-		assertEquals("Created incorrect MerryOrderedMap", 0, hm2.size);
+		Assert.assertEquals("Created incorrect MerryOrderedMap", 0, hm2.size);
 		try {
 			new MerryOrderedMap(-1);
 		} catch (IllegalArgumentException e) {
 			return;
 		}
-		fail(
-				"Failed to throw IllegalArgumentException for initial capacity < 0");
+		Assert.fail("Failed to throw IllegalArgumentException for initial capacity < 0");
 
 		MerryOrderedMap empty = new MerryOrderedMap(0);
-		assertNull("Empty MerryOrderedMap access", empty.get("nothing"));
+		Assert.assertNull("Empty MerryOrderedMap access", empty.get("nothing"));
 		empty.put("something", "here");
-		assertTrue("cannot get element", empty.get("something") == "here");
+		Assert.assertTrue("cannot get element", empty.get("something") == "here");
 	}
 
 	@Test
 	public void test_ConstructorIF() {
 		// Test for method com.github.tommyettinger.merry.MerryOrderedMap(int, float)
 		MerryOrderedMap hm2 = new MerryOrderedMap(5, (float) 0.5);
-		assertEquals("Created incorrect MerryOrderedMap", 0, hm2.size);
+		Assert.assertEquals("Created incorrect MerryOrderedMap", 0, hm2.size);
 		try {
 			new MerryOrderedMap(0, 0);
 		} catch (IllegalArgumentException e) {
 			return;
 		}
-		fail(
-				"Failed to throw IllegalArgumentException for initial load factor <= 0");
+		Assert.fail("Failed to throw IllegalArgumentException for initial load factor <= 0");
 		MerryOrderedMap empty = new MerryOrderedMap(0, 0.75f);
-		assertNull("Empty hashtable access", empty.get("nothing"));
+		Assert.assertNull("Empty hashtable access", empty.get("nothing"));
 		empty.put("something", "here");
-		assertTrue("cannot get element", empty.get("something") == "here");
+		Assert.assertTrue("cannot get element", empty.get("something") == "here");
 	}
 
 	@Test
@@ -106,19 +97,17 @@ public class MerryOrderedMapTest extends junit.framework.TestCase {
 			myMap.put(objArray2[counter], objArray[counter]);
 		MerryOrderedMap hm2 = new MerryOrderedMap(myMap);
 		for (int counter = 0; counter < hmSize; counter++)
-			assertTrue("Failed to construct correct MerryOrderedMap", hm
-					.get(objArray2[counter]) == hm2.get(objArray2[counter]));
+			Assert
+				.assertTrue("Failed to construct correct MerryOrderedMap", hm.get(objArray2[counter]) == hm2.get(objArray2[counter]));
 	}
 
 	@Test
 	public void test_getLjava_lang_Object() {
 		// Test for method java.lang.Object
 		// com.github.tommyettinger.merry.MerryOrderedMap.get(java.lang.Object)
-		assertNull("Get returned non-null for non existent key",
-				hm.get("T"));
+		Assert.assertNull("Get returned non-null for non existent key", hm.get("T"));
 		hm.put("T", "HELLO");
-		assertEquals("Get returned incorecct value for existing key", "HELLO", hm.get("T")
-				);
+		Assert.assertEquals("Get returned incorecct value for existing key", "HELLO", hm.get("T"));
 
 //		MerryOrderedMap m = new MerryOrderedMap();
 //		m.put(null, "test");
@@ -132,8 +121,7 @@ public class MerryOrderedMapTest extends junit.framework.TestCase {
 		// Test for method java.lang.Object
 		// com.github.tommyettinger.merry.MerryOrderedMap.put(java.lang.Object, java.lang.Object)
 		hm.put("KEY", "VALUE");
-		assertEquals("Failed to install key/value pair", 
-				"VALUE", hm.get("KEY"));
+		Assert.assertEquals("Failed to install key/value pair", "VALUE", hm.get("KEY"));
 
 //		MerryOrderedMap m = new MerryOrderedMap();
 //		m.put(new Short((short) 0), "short");
@@ -151,8 +139,7 @@ public class MerryOrderedMapTest extends junit.framework.TestCase {
 		MerryOrderedMap hm2 = new MerryOrderedMap();
 		hm2.putAll(hm);
 		for (int i = 0; i < 1000; i++)
-			assertTrue("Failed to put all elements", hm2.get(
-					new Integer(i).toString()).equals((new Integer(i))));
+			Assert.assertTrue("Failed to put all elements", hm2.get(new Integer(i).toString()).equals((new Integer(i))));
 	}
 
 //    @Test
@@ -178,11 +165,10 @@ public class MerryOrderedMapTest extends junit.framework.TestCase {
 		// Test for method java.util.Set com.github.tommyettinger.merry.MerryOrderedMap.entrySet()
 		MerryObjectMap.Entries s = hm.entries();
 		Iterator i = s.iterator();
-		assertTrue("Returned set of incorrect size", hm.size == s.map.size);
+		Assert.assertTrue("Returned set of incorrect size", hm.size == s.map.size);
 		while (i.hasNext()) {
 			MerryObjectMap.Entry m = (MerryObjectMap.Entry)i.next();
-			assertTrue("Returned incorrect entry set", hm.containsKey(m.key)
-					&& hm.containsValue(m.value, false));
+			Assert.assertTrue("Returned incorrect entry set", hm.containsKey(m.key) && hm.containsValue(m.value, false));
 		}
 	}
 
@@ -190,7 +176,7 @@ public class MerryOrderedMapTest extends junit.framework.TestCase {
 	public void test_keySet() {
 		// Test for method java.util.Set com.github.tommyettinger.merry.MerryOrderedMap.keySet()
 		MerryObjectMap.Keys s = hm.keys();
-		assertTrue("Returned set of incorrect size()", s.map.size == hm.size);
+		Assert.assertTrue("Returned set of incorrect size()", s.map.size == hm.size);
 //		for (int i = 0; i < objArray.length; i++)
 //			assertTrue("Returned set does not contain all keys",
 //				s.contains(objArray[i].toString()));
@@ -214,10 +200,9 @@ public class MerryOrderedMapTest extends junit.framework.TestCase {
 				new Integer(1), new Integer(102), new Integer(203) }));
 		list.remove(remove1);
 		list.remove(remove2);
-		assertTrue("Wrong result", it.next().equals(list.get(0)));
-		assertEquals("Wrong size", 1, map.size);
-		assertTrue("Wrong contents", map.keys().iterator().next().equals(
-				list.get(0)));
+		Assert.assertTrue("Wrong result", it.next().equals(list.get(0)));
+		Assert.assertEquals("Wrong size", 1, map.size);
+		Assert.assertTrue("Wrong contents", map.keys().iterator().next().equals(list.get(0)));
 
 		 MerryOrderedMap map2 = new MerryOrderedMap(101);
 		map2.put(new Integer(1), "1");
@@ -231,16 +216,16 @@ public class MerryOrderedMapTest extends junit.framework.TestCase {
 			next = new Integer(1);
 		it2.hasNext();
 		it2.remove();
-		assertTrue("Wrong result 2", it2.next().equals(next));
-		assertEquals("Wrong size 2", 1, map2.size);
-		assertTrue("Wrong contents 2", map2.keys().iterator().next().equals(next));
+		Assert.assertTrue("Wrong result 2", it2.next().equals(next));
+		Assert.assertEquals("Wrong size 2", 1, map2.size);
+		Assert.assertTrue("Wrong contents 2", map2.keys().iterator().next().equals(next));
 	}
 
 	@Test
 	public void test_values() {
 		// Test for method java.util.Collection com.github.tommyettinger.merry.MerryOrderedMap.values()
 		MerryObjectMap.Values c = hm.values();
-		assertTrue("Returned collection of incorrect size()", c.map.size == hm.size);
+		Assert.assertTrue("Returned collection of incorrect size()", c.map.size == hm.size);
 //		for (int i = 0; i < objArray.length; i++)
 //			assertTrue("Returned collection does not contain all keys", c
 //					.contains(objArray[i]));
@@ -255,9 +240,8 @@ public class MerryOrderedMapTest extends junit.framework.TestCase {
 		 values.hasNext();
 		 Object removed = values.next();
 		values.remove();
-		assertTrue(
-				"Removing from the values collection should remove from the original map",
-				!myMerryOrderedMap.containsValue(removed, false));
+		Assert.assertTrue("Removing from the values collection should remove from the original map",
+			!myMerryOrderedMap.containsValue(removed, false));
 
 	}
 
@@ -268,11 +252,10 @@ public class MerryOrderedMapTest extends junit.framework.TestCase {
 		int size = hm.size;
 		Integer y = new Integer(9);
 		Integer x = ((Integer) hm.remove(y.toString()));
-		assertTrue("Remove returned incorrect value", x.equals(new Integer(9)));
-		assertNull("Failed to remove given key", hm.get(new Integer(9)));
-		assertTrue("Failed to decrement size", hm.size == (size - 1));
-		assertNull("Remove of non-existent key returned non-null", hm
-				.remove("LCLCLC"));
+		Assert.assertTrue("Remove returned incorrect value", x.equals(new Integer(9)));
+		Assert.assertNull("Failed to remove given key", hm.get(new Integer(9)));
+		Assert.assertTrue("Failed to decrement size", hm.size == (size - 1));
+		Assert.assertNull("Remove of non-existent key returned non-null", hm.remove("LCLCLC"));
 
 //		MerryOrderedMap m = new MerryOrderedMap();
 //		m.put(null, "test");
@@ -285,10 +268,9 @@ public class MerryOrderedMapTest extends junit.framework.TestCase {
 	public void test_clear() {
 		// Test for method void com.github.tommyettinger.merry.MerryOrderedMap.clear()
 		hm.clear();
-		assertEquals("Clear failed to reset size", 0, hm.size);
+		Assert.assertEquals("Clear failed to reset size", 0, hm.size);
 		for (int i = 0; i < hmSize; i++)
-			assertNull("Failed to clear all elements",
-					hm.get(objArray2[i]));
+			Assert.assertNull("Failed to clear all elements", hm.get(objArray2[i]));
 
 	}
 
@@ -296,9 +278,8 @@ public class MerryOrderedMapTest extends junit.framework.TestCase {
 	public void test_containsKeyLjava_lang_Object() {
 		// Test for method boolean
 		// com.github.tommyettinger.merry.MerryOrderedMap.containsKey(java.lang.Object)
-		assertTrue("Returned false for valid key", hm.containsKey(new Integer(
-				876).toString()));
-		assertTrue("Returned true for invalid key", !hm.containsKey("KKDKDKD"));
+		Assert.assertTrue("Returned false for valid key", hm.containsKey(new Integer(876).toString()));
+		Assert.assertTrue("Returned true for invalid key", !hm.containsKey("KKDKDKD"));
 
 //		MerryOrderedMap m = new MerryOrderedMap();
 //		m.put(null, "test");
@@ -311,24 +292,21 @@ public class MerryOrderedMapTest extends junit.framework.TestCase {
 	public void test_containsValueLjava_lang_Object() {
 		// Test for method boolean
 		// com.github.tommyettinger.merry.MerryOrderedMap.containsValue(java.lang.Object)
-		assertTrue("Returned false for valid value", hm
-				.containsValue(new Integer(875), false));
-		assertTrue("Returned true for invalid value", !hm
-				.containsValue(new Integer(-9), false));
+		Assert.assertTrue("Returned false for valid value", hm.containsValue(new Integer(875), false));
+		Assert.assertTrue("Returned true for invalid value", !hm.containsValue(new Integer(-9), false));
 	}
 
 	@Test
 	public void test_isEmpty() {
 		// Test for method boolean com.github.tommyettinger.merry.MerryOrderedMap.isEmpty()
-		assertTrue("Returned false for new map", new MerryOrderedMap().isEmpty());
-		assertTrue("Returned true for non-empty", !hm.isEmpty());
+		Assert.assertTrue("Returned false for new map", new MerryOrderedMap().isEmpty());
+		Assert.assertTrue("Returned true for non-empty", !hm.isEmpty());
 	}
 
 	@Test
 	public void test_size() {
 		// Test for method int com.github.tommyettinger.merry.MerryOrderedMap.size()
-		assertTrue("Returned incorrect size",
-				hm.size == (objArray.length + 1));
+		Assert.assertTrue("Returned incorrect size", hm.size == (objArray.length + 1));
 	}
 
 	@Test
@@ -343,11 +321,11 @@ public class MerryOrderedMapTest extends junit.framework.TestCase {
 
 		MerryObjectMap.Entries s1 = lhm.entries();
 		Iterator it1 = s1.iterator();
-		assertTrue("Returned set of incorrect size 1", lhm.size == s1.map.size);
+		Assert.assertTrue("Returned set of incorrect size 1", lhm.size == s1.map.size);
 		for (i = 0; it1.hasNext(); i++) {
 			MerryObjectMap.Entry m = (MerryObjectMap.Entry) it1.next();
 			Integer jj = (Integer) m.key;
-			assertTrue("Returned incorrect entry set 1", jj.intValue() == i);
+			Assert.assertTrue("Returned incorrect entry set 1", jj.intValue() == i);
 		} 
 	}
 
@@ -363,10 +341,10 @@ public class MerryOrderedMapTest extends junit.framework.TestCase {
 
 		MerryObjectMap.Keys s1 = lhm.keys();
 		Iterator it1 = s1.iterator();
-		assertTrue("Returned set of incorrect size", lhm.size == s1.map.size);
+		Assert.assertTrue("Returned set of incorrect size", lhm.size == s1.map.size);
 		for (i = 0; it1.hasNext(); i++) {
 			Integer jj = (Integer) it1.next();
-			assertTrue("Returned incorrect entry set", jj.intValue() == i);
+			Assert.assertTrue("Returned incorrect entry set", jj.intValue() == i);
 		}
 	}
 
@@ -382,17 +360,17 @@ public class MerryOrderedMapTest extends junit.framework.TestCase {
 
 		MerryObjectMap.Values s1 = lhm.values();
 		Iterator it1 = s1.iterator();
-		assertTrue("Returned set of incorrect size 1", lhm.size == s1.map.size);
+		Assert.assertTrue("Returned set of incorrect size 1", lhm.size == s1.map.size);
 		for (i = 0; it1.hasNext(); i++) {
 			Integer jj = (Integer) it1.next();
-			assertTrue("Returned incorrect entry set 1", jj.intValue() == i * 2);
+			Assert.assertTrue("Returned incorrect entry set 1", jj.intValue() == i * 2);
 		}
 	}
 	/**
 	 * Sets up the fixture, for example, open a network connection. This method
 	 * is called before a test is executed.
 	 */
-	protected void setUp() {
+	@Before public void setUp () {
 		hm = new MerryOrderedMap();
 		for (int i = 0; i < objArray.length; i++)
 			hm.put(objArray2[i], objArray[i]);
@@ -403,6 +381,6 @@ public class MerryOrderedMapTest extends junit.framework.TestCase {
 	 * Tears down the fixture, for example, close a network connection. This
 	 * method is called after a test is executed.
 	 */
-	protected void tearDown() {
+	@After public void tearDown () {
 	}
 }

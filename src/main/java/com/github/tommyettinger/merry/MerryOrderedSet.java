@@ -239,4 +239,10 @@ public class MerryOrderedSet<T> extends MerryObjectSet<T> {
 			return toArray(new Array(true, set.size - nextIndex));
 		}
 	}
+	 static public <T> MerryOrderedSet<T> with (T... array) {
+		  MerryOrderedSet<T> set = new MerryOrderedSet<>();
+		  set.addAll(array);
+		  return set;
+	 }
+
 }
