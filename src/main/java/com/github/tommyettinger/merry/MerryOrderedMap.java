@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2011 See AUTHORS file.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,7 +22,8 @@ import com.badlogic.gdx.utils.GdxRuntimeException;
 
 import java.util.NoSuchElementException;
 
-/** A {@link MerryObjectMap} that also stores keys in an {@link Array} using the insertion order. Iteration over the
+/**
+ * A {@link MerryObjectMap} that also stores keys in an {@link Array} using the insertion order. Iteration over the
  * {@link #entries()}, {@link #keys()}, and {@link #values()} is ordered and faster than an unordered map. Keys can also
  * be accessed and the order changed using {@link #orderedKeys()}. There is some additional overhead for put and remove.
  * When used for faster iteration versus MerryObjectMap and the order does not actually matter, copying during remove
@@ -93,8 +94,10 @@ import java.util.NoSuchElementException;
  * used during removal apparently is key to the good performance of this implementation. Thanks to Maksym Stepanenko,
  * who wrote a similar class that provided valuable insight into how Robin Hood hashing works in Java:
  * <a href="https://github.com/mstepan/algorithms/blob/master/src/main/java/com/max/algs/hashing/robin_hood/RobinHoodHashMap.java">Maksym's code is here</a>.
+ *
  * @author Tommy Ettinger
- * @author Nathan Sweet */
+ * @author Nathan Sweet
+ */
 public class MerryOrderedMap<K, V> extends MerryObjectMap<K, V> {
 	private final Array<K> keys;
 
@@ -118,7 +121,8 @@ public class MerryOrderedMap<K, V> extends MerryObjectMap<K, V> {
 	}
 
 	public V put (K key, V value) {
-		if (key == null) throw new IllegalArgumentException("key cannot be null.");
+		if (key == null)
+			throw new IllegalArgumentException("key cannot be null.");
 		V[] valueTable = this.valueTable;
 		int b = place(key);
 		int loc = locateKey(key, b);
@@ -157,7 +161,15 @@ public class MerryOrderedMap<K, V> extends MerryObjectMap<K, V> {
 			resize(ib.length << 1);
 		}
 		return null;
+	}
 
+	public void putAll (MerryOrderedMap<K, V> map) {
+		ensureCapacity(map.size);
+		final K[] keys = map.keys.items;
+		K k;
+		for (int i = 0, n = map.keys.size; i < n; i++) {
+			put((k = keys[i]), map.get(k));
+		}
 	}
 
 	public V remove (K key) {
@@ -187,12 +199,15 @@ public class MerryOrderedMap<K, V> extends MerryObjectMap<K, V> {
 		return entries();
 	}
 
-	/** Returns an iterator for the entries in the map. Remove is supported.
+	/**
+	 * Returns an iterator for the entries in the map. Remove is supported.
 	 * <p>
 	 * If {@link Collections#allocateIterators} is false, the same iterator instance is returned each time this method is called.
-	 * Use the {@link OrderedMapEntries} constructor for nested or multithreaded iteration. */
+	 * Use the {@link OrderedMapEntries} constructor for nested or multithreaded iteration.
+	 */
 	public Entries<K, V> entries () {
-		if (Collections.allocateIterators) return new OrderedMapEntries(this);
+		if (Collections.allocateIterators)
+			return new OrderedMapEntries(this);
 		if (entries1 == null) {
 			entries1 = new OrderedMapEntries(this);
 			entries2 = new OrderedMapEntries(this);
@@ -209,12 +224,15 @@ public class MerryOrderedMap<K, V> extends MerryObjectMap<K, V> {
 		return entries2;
 	}
 
-	/** Returns an iterator for the values in the map. Remove is supported.
+	/**
+	 * Returns an iterator for the values in the map. Remove is supported.
 	 * <p>
 	 * If {@link Collections#allocateIterators} is false, the same iterator instance is returned each time this method is called.
-	 * Use the {@link OrderedMapValues} constructor for nested or multithreaded iteration. */
+	 * Use the {@link OrderedMapValues} constructor for nested or multithreaded iteration.
+	 */
 	public Values<V> values () {
-		if (Collections.allocateIterators) return new OrderedMapValues(this);
+		if (Collections.allocateIterators)
+			return new OrderedMapValues(this);
 		if (values1 == null) {
 			values1 = new OrderedMapValues(this);
 			values2 = new OrderedMapValues(this);
@@ -231,12 +249,15 @@ public class MerryOrderedMap<K, V> extends MerryObjectMap<K, V> {
 		return values2;
 	}
 
-	/** Returns an iterator for the keys in the map. Remove is supported.
+	/**
+	 * Returns an iterator for the keys in the map. Remove is supported.
 	 * <p>
 	 * If {@link Collections#allocateIterators} is false, the same iterator instance is returned each time this method is called.
-	 * Use the {@link OrderedMapKeys} constructor for nested or multithreaded iteration. */
+	 * Use the {@link OrderedMapKeys} constructor for nested or multithreaded iteration.
+	 */
 	public Keys<K> keys () {
-		if (Collections.allocateIterators) return new OrderedMapKeys(this);
+		if (Collections.allocateIterators)
+			return new OrderedMapKeys(this);
 		if (keys1 == null) {
 			keys1 = new OrderedMapKeys(this);
 			keys2 = new OrderedMapKeys(this);
@@ -254,13 +275,15 @@ public class MerryOrderedMap<K, V> extends MerryObjectMap<K, V> {
 	}
 
 	public String toString () {
-		if (size == 0) return "{}";
+		if (size == 0)
+			return "{}";
 		StringBuilder buffer = new StringBuilder(32);
 		buffer.append('{');
 		Array<K> keys = this.keys;
 		for (int i = 0, n = keys.size; i < n; i++) {
 			K key = keys.get(i);
-			if (i > 0) buffer.append(", ");
+			if (i > 0)
+				buffer.append(", ");
 			buffer.append(key);
 			buffer.append('=');
 			buffer.append(get(key));
@@ -283,8 +306,10 @@ public class MerryOrderedMap<K, V> extends MerryObjectMap<K, V> {
 		}
 
 		public Entry next () {
-			if (!hasNext) throw new NoSuchElementException();
-			if (!valid) throw new GdxRuntimeException("#iterator() cannot be used nested.");
+			if (!hasNext)
+				throw new NoSuchElementException();
+			if (!valid)
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			entry.key = keys.get(nextIndex);
 			entry.value = map.get(entry.key);
 			nextIndex++;
@@ -293,7 +318,8 @@ public class MerryOrderedMap<K, V> extends MerryObjectMap<K, V> {
 		}
 
 		public void remove () {
-			if (currentIndex < 0) throw new IllegalStateException("next must be called before remove.");
+			if (currentIndex < 0)
+				throw new IllegalStateException("next must be called before remove.");
 			map.remove(entry.key);
 			nextIndex--;
 		}
@@ -313,8 +339,10 @@ public class MerryOrderedMap<K, V> extends MerryObjectMap<K, V> {
 		}
 
 		public K next () {
-			if (!hasNext) throw new NoSuchElementException();
-			if (!valid) throw new GdxRuntimeException("#iterator() cannot be used nested.");
+			if (!hasNext)
+				throw new NoSuchElementException();
+			if (!valid)
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			K key = keys.get(nextIndex);
 			currentIndex = nextIndex;
 			nextIndex++;
@@ -323,7 +351,8 @@ public class MerryOrderedMap<K, V> extends MerryObjectMap<K, V> {
 		}
 
 		public void remove () {
-			if (currentIndex < 0) throw new IllegalStateException("next must be called before remove.");
+			if (currentIndex < 0)
+				throw new IllegalStateException("next must be called before remove.");
 			((MerryOrderedMap)map).removeIndex(nextIndex - 1);
 			nextIndex = currentIndex;
 			currentIndex = -1;
@@ -355,8 +384,10 @@ public class MerryOrderedMap<K, V> extends MerryObjectMap<K, V> {
 		}
 
 		public V next () {
-			if (!hasNext) throw new NoSuchElementException();
-			if (!valid) throw new GdxRuntimeException("#iterator() cannot be used nested.");
+			if (!hasNext)
+				throw new NoSuchElementException();
+			if (!valid)
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			V value = map.get(keys.get(nextIndex));
 			currentIndex = nextIndex;
 			nextIndex++;
@@ -365,7 +396,8 @@ public class MerryOrderedMap<K, V> extends MerryObjectMap<K, V> {
 		}
 
 		public void remove () {
-			if (currentIndex < 0) throw new IllegalStateException("next must be called before remove.");
+			if (currentIndex < 0)
+				throw new IllegalStateException("next must be called before remove.");
 			((MerryOrderedMap)map).removeIndex(currentIndex);
 			nextIndex = currentIndex;
 			currentIndex = -1;

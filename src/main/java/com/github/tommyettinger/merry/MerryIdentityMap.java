@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2011 See AUTHORS file.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,7 +16,8 @@
 
 package com.github.tommyettinger.merry;
 
-/** An unordered map that uses identity comparison for its object keys. This implementation uses Robin Hood Hashing with
+/**
+ * An unordered map that uses identity comparison for its object keys. This implementation uses Robin Hood Hashing with
  * the backward-shift algorithm for removal, and finds space for keys using Fibonacci hashing instead of the more-common
  * power-of-two mask. Null keys are not allowed. Null values are allowed. No allocation is done except when growing the
  * table size. It uses {@link System#identityHashCode(Object)} to hash keys, which may be slower than the hashCode() of
@@ -88,40 +89,51 @@ package com.github.tommyettinger.merry;
  * used during removal apparently is key to the good performance of this implementation. Thanks to Maksym Stepanenko,
  * who wrote a similar class that provided valuable insight into how Robin Hood hashing works in Java:
  * <a href="https://github.com/mstepan/algorithms/blob/master/src/main/java/com/max/algs/hashing/robin_hood/RobinHoodHashMap.java">Maksym's code is here</a>.
+ *
  * @author Tommy Ettinger
- * @author Nathan Sweet */
+ * @author Nathan Sweet
+ */
 public class MerryIdentityMap<K, V> extends MerryObjectMap<K, V> {
 
-	/** Creates a new map with an initial capacity of 51 and a load factor of 0.8. */
+	/**
+	 * Creates a new map with an initial capacity of 51 and a load factor of 0.8.
+	 */
 	public MerryIdentityMap () {
 		super();
 	}
-	/** Creates a new map with a load factor of 0.8.
-	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two. */
+
+	/**
+	 * Creates a new map with a load factor of 0.8.
+	 *
+	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two.
+	 */
 	public MerryIdentityMap (int initialCapacity) {
 		super(initialCapacity);
 	}
 
-	/** Creates a new map with the specified initial capacity and load factor. This map will hold initialCapacity items before
+	/**
+	 * Creates a new map with the specified initial capacity and load factor. This map will hold initialCapacity items before
 	 * growing the backing table.
-	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two. */
+	 *
+	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two.
+	 */
 	public MerryIdentityMap (int initialCapacity, float loadFactor) {
 		super(initialCapacity, loadFactor);
 	}
-	
-	/** Creates a new map identical to the specified map. */
+
+	/**
+	 * Creates a new map identical to the specified map.
+	 */
 	public MerryIdentityMap (MerryIdentityMap<? extends K, ? extends V> map) {
 		super(map);
 	}
 
-	@Override
-	protected int place(K item) {
-		return (int) (System.identityHashCode(item) * 0x9E3779B97F4A7C15L >>> shift);
+	@Override protected int place (K item) {
+		return (int)(System.identityHashCode(item) * 0x9E3779B97F4A7C15L >>> shift);
 		//return (System.identityHashCode(item) & mask);
 	}
 
-	@Override
-	int locateKey(K key, int placement) {
+	@Override int locateKey (K key, int placement) {
 		for (int i = placement; ; i = i + 1 & mask) {
 			// empty space is available
 			if (keyTable[i] == null) {

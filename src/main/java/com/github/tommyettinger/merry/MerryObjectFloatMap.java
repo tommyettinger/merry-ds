@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2011 See AUTHORS file.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,7 +25,8 @@ import com.badlogic.gdx.utils.NumberUtils;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-/** An unordered map where the keys are objects and the values are unboxed floats. This implementation uses Robin Hood
+/**
+ * An unordered map where the keys are objects and the values are unboxed floats. This implementation uses Robin Hood
  * Hashing with the backward-shift algorithm for removal, and finds space for keys using Fibonacci hashing instead of
  * the more-common power-of-two mask. Null keys are not allowed. No allocation is done except when growing the table
  * size.
@@ -95,8 +96,10 @@ import java.util.NoSuchElementException;
  * used during removal apparently is key to the good performance of this implementation. Thanks to Maksym Stepanenko,
  * who wrote a similar class that provided valuable insight into how Robin Hood hashing works in Java:
  * <a href="https://github.com/mstepan/algorithms/blob/master/src/main/java/com/max/algs/hashing/robin_hood/RobinHoodHashMap.java">Maksym's code is here</a>.
+ *
  * @author Tommy Ettinger
- * @author Nathan Sweet */
+ * @author Nathan Sweet
+ */
 public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entry<K>> {
 
 	public int size;
@@ -107,7 +110,7 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 	 * Initial Bucket positions.
 	 */
 	int[] ib;
-	
+
 	float loadFactor;
 	int threshold;
 	/**
@@ -133,28 +136,38 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 	Values values1, values2;
 	Keys keys1, keys2;
 
-	/** Creates a new map with an initial capacity of 51 and a load factor of 0.8. */
+	/**
+	 * Creates a new map with an initial capacity of 51 and a load factor of 0.8.
+	 */
 	public MerryObjectFloatMap () {
 		this(51, 0.8f);
 	}
 
-	/** Creates a new map with a load factor of 0.8.
-	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two. */
+	/**
+	 * Creates a new map with a load factor of 0.8.
+	 *
+	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two.
+	 */
 	public MerryObjectFloatMap (int initialCapacity) {
 		this(initialCapacity, 0.8f);
 	}
 
-	/** Creates a new map with the specified initial capacity and load factor. This map will hold initialCapacity items before
+	/**
+	 * Creates a new map with the specified initial capacity and load factor. This map will hold initialCapacity items before
 	 * growing the backing table.
-	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two. */
+	 *
+	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two.
+	 */
 	public MerryObjectFloatMap (int initialCapacity, float loadFactor) {
-		if (initialCapacity < 0) throw new IllegalArgumentException("initialCapacity must be >= 0: " + initialCapacity);
-		if (loadFactor <= 0f || loadFactor >= 1f) throw new IllegalArgumentException("loadFactor must be > 0 and < 1: " + loadFactor);
-		initialCapacity = MathUtils.nextPowerOfTwo((int) Math.ceil(initialCapacity / loadFactor));
-		if (initialCapacity > 1 << 30) throw new IllegalArgumentException("initialCapacity is too large: " + initialCapacity);
+		if (initialCapacity < 0)
+			throw new IllegalArgumentException("initialCapacity must be >= 0: " + initialCapacity);
+		if (loadFactor <= 0f || loadFactor >= 1f)
+			throw new IllegalArgumentException("loadFactor must be > 0 and < 1: " + loadFactor);
+		initialCapacity = MathUtils.nextPowerOfTwo((int)Math.ceil(initialCapacity / loadFactor));
+		if (initialCapacity > 1 << 30)
+			throw new IllegalArgumentException("initialCapacity is too large: " + initialCapacity);
 
 		this.loadFactor = loadFactor;
-
 
 		threshold = (int)(initialCapacity * loadFactor);
 		mask = initialCapacity - 1;
@@ -165,9 +178,11 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 		ib = new int[initialCapacity];
 	}
 
-	/** Creates a new map identical to the specified map. */
+	/**
+	 * Creates a new map identical to the specified map.
+	 */
 	public MerryObjectFloatMap (MerryObjectFloatMap<? extends K> map) {
-		this((int) Math.floor(map.ib.length * map.loadFactor), map.loadFactor);
+		this((int)Math.floor(map.ib.length * map.loadFactor), map.loadFactor);
 		System.arraycopy(map.keyTable, 0, keyTable, 0, map.keyTable.length);
 		System.arraycopy(map.valueTable, 0, valueTable, 0, map.valueTable.length);
 		System.arraycopy(map.ib, 0, ib, 0, map.ib.length);
@@ -175,7 +190,7 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 	}
 
 	/**
-     * Finds an array index between 0 and {@link #mask}, both inclusive, corresponding to the hash code of {@code item}.
+	 * Finds an array index between 0 and {@link #mask}, both inclusive, corresponding to the hash code of {@code item}.
 	 * By default, this uses "Fibonacci Hashing" on the {@link Object#hashCode()} of {@code item}; this multiplies
 	 * {@code item.hashCode()} by a long constant (2 to the 64, divided by the golden ratio) and shifts the high-quality
 	 * uppermost bits into the lowest positions so they can be used as array indices. The multiplication by a long may
@@ -192,27 +207,29 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 	 * that don't need the collision decrease of Fibonacci Hashing (assuming the key class has a good hashCode()) may do
 	 * fine with a simple implementation:
 	 * {@code return (item.hashCode() & mask);}
+	 *
 	 * @param item a key that this method will hash, by default by calling {@link Object#hashCode()} on it; non-null
 	 * @return an int between 0 and {@link #mask}, both inclusive
 	 */
-	protected int place(final K item) {
+	protected int place (final K item) {
 		// shift is always greater than 32, less than 64
-		return (int) (item.hashCode() * 0x9E3779B97F4A7C15L >>> shift);
+		return (int)(item.hashCode() * 0x9E3779B97F4A7C15L >>> shift);
 	}
 
-	private int locateKey(final K key) {
+	private int locateKey (final K key) {
 		return locateKey(key, place(key));
 	}
 
 	/**
-     * Given a key and its initial placement to try in an array, this finds the actual location of the key in the array
+	 * Given a key and its initial placement to try in an array, this finds the actual location of the key in the array
 	 * if it is present, or -1 if the key is not present. This can be overridden if a subclass needs to compare for
 	 * equality differently than just by calling {@link Object#equals(Object)}, but only within the same package.
-	 * @param key a K key that will be checked for equality if a similar-seeming key is found
+	 *
+	 * @param key       a K key that will be checked for equality if a similar-seeming key is found
 	 * @param placement as calculated by {@link #place(Object)}, almost always with {@code place(key)}
 	 * @return the location in the key array of key, if found, or -1 if it was not found.
 	 */
-	int locateKey(final K key, final int placement) {
+	int locateKey (final K key, final int placement) {
 		for (int i = placement; ; i = i + 1 & mask) {
 			// empty space is available
 			if (keyTable[i] == null) {
@@ -230,8 +247,8 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 		}
 	}
 
-
-	/** Doesn't return a value, unlike other maps.
+	/**
+	 * Doesn't return a value, unlike other maps.
 	 * You can use {@link #get(Object, float)} with a defaultValue of {@link Float#NaN} if you want to tell with
 	 * certainty that a key is not present; comparing with NaN is tricky but {@link Float#isNaN(float)} makes it easy.
 	 * If isNaN returns true, you can generally act like another Map had returned null in the same situation (meaning
@@ -240,7 +257,8 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 	 * in a map.
 	 */
 	public void put (K key, float value) {
-		if (key == null) throw new IllegalArgumentException("key cannot be null.");
+		if (key == null)
+			throw new IllegalArgumentException("key cannot be null.");
 		K[] keyTable = this.keyTable;
 		float[] valueTable = this.valueTable;
 		int[] ib = this.ib;
@@ -280,11 +298,22 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 
 	public void putAll (MerryObjectFloatMap<K> map) {
 		ensureCapacity(map.size);
-		for (Entry<K> entry : map)
-			put(entry.key, entry.value);
+		final K[] keyTable = map.keyTable;
+		final float[] valueTable = map.valueTable;
+		K k;
+		for (int i = 0, n = keyTable.length; i < n; i++) {
+			if ((k = keyTable[i]) != null)
+				put(k, valueTable[i]);
+		}
 	}
+//		ensureCapacity(map.size);
+//		for (Entry<K> entry : map)
+//			put(entry.key, entry.value);
+//	}
 
-	/** Skips checks for existing keys. */
+	/**
+	 * Skips checks for existing keys.
+	 */
 	private void putResize (K key, float value) {
 		K[] keyTable = this.keyTable;
 		float[] valueTable = this.valueTable;
@@ -317,19 +346,22 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 		}
 	}
 
-	/** Returns the value for the specified key, or the default value if the key is not in the map. */
+	/**
+	 * Returns the value for the specified key, or the default value if the key is not in the map.
+	 */
 	public float get (K key, float defaultValue) {
 		final int loc = locateKey(key);
 		return loc == -1 ? defaultValue : valueTable[loc];
 	}
 
-
-	/** Returns the key's current value and increments the stored value. If the key is not in the map, defaultValue + increment is
-	 * put into the map. */
+	/**
+	 * Returns the key's current value and increments the stored value. If the key is not in the map, defaultValue + increment is
+	 * put into the map.
+	 */
 	public float getAndIncrement (K key, float defaultValue, float increment) {
 		final int loc = locateKey(key);
 		// key was not found
-		if(loc == -1) {
+		if (loc == -1) {
 			// because we know there's no existing duplicate key, we can use putResize().
 			putResize(key, defaultValue + increment);
 			return defaultValue;
@@ -338,7 +370,6 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 		valueTable[loc] += increment;
 		return oldValue;
 	}
-
 
 	public float remove (K key, float defaultValue) {
 		int loc = locateKey(key);
@@ -360,26 +391,37 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 		return oldValue;
 	}
 
-	 /** Returns true if the map has one or more items. */
-	 public boolean notEmpty () {
-		  return size > 0;
-	 }
+	/**
+	 * Returns true if the map has one or more items.
+	 */
+	public boolean notEmpty () {
+		return size > 0;
+	}
 
-	 /** Returns true if the map is empty. */
-	 public boolean isEmpty () {
-		  return size == 0;
-	 }
+	/**
+	 * Returns true if the map is empty.
+	 */
+	public boolean isEmpty () {
+		return size == 0;
+	}
 
-	/** Reduces the size of the backing arrays to be the specified capacity or less. If the capacity is already less, nothing is
-	 * done. If the map contains more items than the specified capacity, the next highest power of two capacity is used instead. */
+	/**
+	 * Reduces the size of the backing arrays to be the specified capacity or less. If the capacity is already less, nothing is
+	 * done. If the map contains more items than the specified capacity, the next highest power of two capacity is used instead.
+	 */
 	public void shrink (int maximumCapacity) {
-		if (maximumCapacity < 0) throw new IllegalArgumentException("maximumCapacity must be >= 0: " + maximumCapacity);
-		if (size > maximumCapacity) maximumCapacity = size;
-		if (ib.length <= maximumCapacity) return;
+		if (maximumCapacity < 0)
+			throw new IllegalArgumentException("maximumCapacity must be >= 0: " + maximumCapacity);
+		if (size > maximumCapacity)
+			maximumCapacity = size;
+		if (ib.length <= maximumCapacity)
+			return;
 		resize(MathUtils.nextPowerOfTwo(maximumCapacity));
 	}
 
-	/** Clears the map and reduces the size of the backing arrays to be the specified capacity if they are larger. */
+	/**
+	 * Clears the map and reduces the size of the backing arrays to be the specified capacity if they are larger.
+	 */
 	public void clear (int maximumCapacity) {
 		if (ib.length <= maximumCapacity) {
 			clear();
@@ -390,23 +432,27 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 	}
 
 	public void clear () {
-		if (size == 0) return;
+		if (size == 0)
+			return;
 		K[] keyTable = this.keyTable;
 		int[] ib = this.ib;
-		for (int i = ib.length; i > 0;) {
+		for (int i = ib.length; i > 0; ) {
 			keyTable[--i] = null;
 			ib[i] = 0;
 		}
 		size = 0;
 	}
 
-	/** Returns true if the specified value is in the map. Note this traverses the entire map and compares every value, which may
-	 * be an expensive operation. */
+	/**
+	 * Returns true if the specified value is in the map. Note this traverses the entire map and compares every value, which may
+	 * be an expensive operation.
+	 */
 	public boolean containsValue (float value) {
 		final K[] keyTable = this.keyTable;
-		final float[] valueTable = this.valueTable;			
-		for (int i = valueTable.length; i-- > 0;)
-			if (keyTable[i] != null && valueTable[i] == value) return true;
+		final float[] valueTable = this.valueTable;
+		for (int i = valueTable.length; i-- > 0; )
+			if (keyTable[i] != null && valueTable[i] == value)
+				return true;
 		return false;
 	}
 
@@ -414,25 +460,29 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 		return locateKey(key) != -1;
 	}
 
-	/** Returns the key for the specified value, or null if it is not in the map. Note this traverses the entire map and compares
+	/**
+	 * Returns the key for the specified value, or null if it is not in the map. Note this traverses the entire map and compares
 	 * every value, which may be an expensive operation.
 	 */
 	public K findKey (float value) {
 		final K[] keyTable = this.keyTable;
 		final float[] valueTable = this.valueTable;
-		for (int i = valueTable.length; i-- > 0;)
-		{
+		for (int i = valueTable.length; i-- > 0; ) {
 			K key = keyTable[i];
-			if (key != null && valueTable[i] == value) return key;
+			if (key != null && valueTable[i] == value)
+				return key;
 		}
 		return null;
 	}
 
-	/** Increases the size of the backing array to accommodate the specified number of additional items. Useful before adding many
-	 * items to avoid multiple backing array resizes. */
+	/**
+	 * Increases the size of the backing array to accommodate the specified number of additional items. Useful before adding many
+	 * items to avoid multiple backing array resizes.
+	 */
 	public void ensureCapacity (int additionalCapacity) {
 		int sizeNeeded = size + additionalCapacity;
-		if (sizeNeeded >= threshold) resize(MathUtils.nextPowerOfTwo((int) Math.ceil(sizeNeeded / loadFactor)));
+		if (sizeNeeded >= threshold)
+			resize(MathUtils.nextPowerOfTwo((int)Math.ceil(sizeNeeded / loadFactor)));
 	}
 
 	final void resize (int newSize) {
@@ -453,7 +503,8 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 		if (oldSize > 0) {
 			for (int i = 0; i < oldCapacity; i++) {
 				K key = oldKeyTable[i];
-				if (key != null) putResize(key, oldValueTable[i]);
+				if (key != null)
+					putResize(key, oldValueTable[i]);
 			}
 		}
 	}
@@ -476,18 +527,23 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 	}
 
 	public boolean equals (Object obj) {
-		if (obj == this) return true;
-		if (!(obj instanceof MerryObjectFloatMap)) return false;
+		if (obj == this)
+			return true;
+		if (!(obj instanceof MerryObjectFloatMap))
+			return false;
 		MerryObjectFloatMap other = (MerryObjectFloatMap)obj;
-		if (other.size != size) return false;
+		if (other.size != size)
+			return false;
 		K[] keyTable = this.keyTable;
 		float[] valueTable = this.valueTable;
 		for (int i = 0, n = keyTable.length; i < n; i++) {
 			K key = keyTable[i];
 			if (key != null) {
 				float otherValue = other.get(key, Float.NaN);
-				if (otherValue != otherValue) return false; // only possible for NaN values
-				else if (otherValue != valueTable[i]) return false;
+				if (otherValue != otherValue)
+					return false; // only possible for NaN values
+				else if (otherValue != valueTable[i])
+					return false;
 			}
 		}
 		return true;
@@ -502,15 +558,18 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 	}
 
 	private String toString (String separator, boolean braces) {
-		if (size == 0) return braces ? "{}" : "";
+		if (size == 0)
+			return braces ? "{}" : "";
 		StringBuilder buffer = new StringBuilder(32);
-		if (braces) buffer.append('{');
+		if (braces)
+			buffer.append('{');
 		K[] keyTable = this.keyTable;
 		float[] valueTable = this.valueTable;
 		int i = keyTable.length;
 		while (i-- > 0) {
 			K key = keyTable[i];
-			if (key == null) continue;
+			if (key == null)
+				continue;
 			buffer.append(key);
 			buffer.append('=');
 			buffer.append(valueTable[i]);
@@ -518,13 +577,15 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 		}
 		while (i-- > 0) {
 			K key = keyTable[i];
-			if (key == null) continue;
+			if (key == null)
+				continue;
 			buffer.append(separator);
 			buffer.append(key);
 			buffer.append('=');
 			buffer.append(valueTable[i]);
 		}
-		if (braces) buffer.append('}');
+		if (braces)
+			buffer.append('}');
 		return buffer.toString();
 	}
 
@@ -532,8 +593,10 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 		return entries();
 	}
 
-	/** Returns an iterator for the entries in the map. Remove is supported. Note that the same iterator instance is returned each
-	 * time this method is called. Use the {@link Entries} constructor for nested or multithreaded iteration. */
+	/**
+	 * Returns an iterator for the entries in the map. Remove is supported. Note that the same iterator instance is returned each
+	 * time this method is called. Use the {@link Entries} constructor for nested or multithreaded iteration.
+	 */
 	public Entries<K> entries () {
 		if (entries1 == null) {
 			entries1 = new Entries(this);
@@ -551,8 +614,10 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 		return entries2;
 	}
 
-	/** Returns an iterator for the values in the map. Remove is supported. Note that the same iterator instance is returned each
-	 * time this method is called. Use the {@link Values} constructor for nested or multithreaded iteration. */
+	/**
+	 * Returns an iterator for the values in the map. Remove is supported. Note that the same iterator instance is returned each
+	 * time this method is called. Use the {@link Values} constructor for nested or multithreaded iteration.
+	 */
 	public Values values () {
 		if (values1 == null) {
 			values1 = new Values(this);
@@ -570,8 +635,10 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 		return values2;
 	}
 
-	/** Returns an iterator for the keys in the map. Remove is supported. Note that the same iterator instance is returned each
-	 * time this method is called. Use the {@link Keys} constructor for nested or multithreaded iteration. */
+	/**
+	 * Returns an iterator for the keys in the map. Remove is supported. Note that the same iterator instance is returned each
+	 * time this method is called. Use the {@link Keys} constructor for nested or multithreaded iteration.
+	 */
 	public Keys<K> keys () {
 		if (keys1 == null) {
 			keys1 = new Keys(this);
@@ -619,7 +686,7 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 		void findNextIndex () {
 			hasNext = false;
 			K[] keyTable = map.keyTable;
-			for (int n = keyTable.length; ++nextIndex < n;) {
+			for (int n = keyTable.length; ++nextIndex < n; ) {
 				if (keyTable[nextIndex] != null) {
 					hasNext = true;
 					break;
@@ -628,7 +695,8 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 		}
 
 		public void remove () {
-			if (currentIndex < 0) throw new IllegalStateException("next must be called before remove.");
+			if (currentIndex < 0)
+				throw new IllegalStateException("next must be called before remove.");
 			K[] keyTable = map.keyTable;
 			float[] valueTable = map.valueTable;
 			int[] ib = map.ib;
@@ -653,10 +721,14 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 			super(map);
 		}
 
-		/** Note the same entry instance is returned each time this method is called. */
+		/**
+		 * Note the same entry instance is returned each time this method is called.
+		 */
 		public Entry<K> next () {
-			if (!hasNext) throw new NoSuchElementException();
-			if (!valid) throw new GdxRuntimeException("#iterator() cannot be used nested.");
+			if (!hasNext)
+				throw new NoSuchElementException();
+			if (!valid)
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			K[] keyTable = map.keyTable;
 			entry.key = keyTable[nextIndex];
 			entry.value = map.valueTable[nextIndex];
@@ -666,7 +738,8 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 		}
 
 		public boolean hasNext () {
-			if (!valid) throw new GdxRuntimeException("#iterator() cannot be used nested.");
+			if (!valid)
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			return hasNext;
 		}
 
@@ -681,13 +754,16 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 		}
 
 		public boolean hasNext () {
-			if (!valid) throw new GdxRuntimeException("#iterator() cannot be used nested.");
+			if (!valid)
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			return hasNext;
 		}
 
 		public float next () {
-			if (!hasNext) throw new NoSuchElementException();
-			if (!valid) throw new GdxRuntimeException("#iterator() cannot be used nested.");
+			if (!hasNext)
+				throw new NoSuchElementException();
+			if (!valid)
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			float value = map.valueTable[nextIndex];
 			currentIndex = nextIndex;
 			findNextIndex();
@@ -698,7 +774,9 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 			return this;
 		}
 
-		/** Returns a new array containing the remaining values. */
+		/**
+		 * Returns a new array containing the remaining values.
+		 */
 		public FloatArray toArray () {
 			FloatArray array = new FloatArray(true, map.size);
 			while (hasNext)
@@ -706,7 +784,9 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 			return array;
 		}
 
-		/** Adds the remaining values to the specified array. */
+		/**
+		 * Adds the remaining values to the specified array.
+		 */
 		public FloatArray toArray (FloatArray array) {
 			while (hasNext)
 				array.add(next());
@@ -714,19 +794,22 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 		}
 	}
 
-	static public class Keys<K>  extends MapIterator<K> implements Iterable<K>, Iterator<K> {
+	static public class Keys<K> extends MapIterator<K> implements Iterable<K>, Iterator<K> {
 		public Keys (MerryObjectFloatMap<K> map) {
 			super(map);
 		}
 
 		public boolean hasNext () {
-			if (!valid) throw new GdxRuntimeException("#iterator() cannot be used nested.");
+			if (!valid)
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			return hasNext;
 		}
 
 		public K next () {
-			if (!hasNext) throw new NoSuchElementException();
-			if (!valid) throw new GdxRuntimeException("#iterator() cannot be used nested.");
+			if (!hasNext)
+				throw new NoSuchElementException();
+			if (!valid)
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			K key = map.keyTable[nextIndex];
 			currentIndex = nextIndex;
 			findNextIndex();
@@ -737,12 +820,16 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 			return this;
 		}
 
-		/** Returns a new array containing the remaining keys. */
+		/**
+		 * Returns a new array containing the remaining keys.
+		 */
 		public Array<K> toArray () {
 			return toArray(new Array<K>(true, map.size));
 		}
 
-		/** Adds the remaining keys to the array. */
+		/**
+		 * Adds the remaining keys to the array.
+		 */
 		public Array<K> toArray (Array<K> array) {
 			while (hasNext)
 				array.add(next());
