@@ -995,5 +995,13 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 				array.add(next());
 			return array;
 		}
+		/**
+		 * Adds the remaining values to the specified array.
+		 */
+		public IntArray toArray (IntArray array) {
+			while (hasNext)
+				array.add(next());
+			return array;
+		}
 	}
 }
