@@ -18,14 +18,16 @@ package com.github.tommyettinger.merry;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Collections;
+import com.badlogic.gdx.utils.FloatArray;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.badlogic.gdx.utils.IntArray;
+import com.badlogic.gdx.utils.NumberUtils;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * An unordered map that uses int keys and int values. This implementation uses Robin Hood Hashing with the backward-shift
+ * An unordered map that uses int keys and float values. This implementation uses Robin Hood Hashing with the backward-shift
  * algorithm for removal, and finds space for keys using Fibonacci hashing instead of the more-common power-of-two mask.
  * Null values are allowed. No allocation is done except when growing the table size.
  * <br>
@@ -107,14 +109,14 @@ import java.util.NoSuchElementException;
  * @author Tommy Ettinger
  * @author Nathan Sweet
  */
-public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
+public class MerryIntFloatMap<V> implements Iterable<MerryIntFloatMap.Entry> {
 	public int size;
 
 	private int[] keyTable;
-	private int[] valueTable;
+	private float[] valueTable;
 	private int[] ib;
 
-	private int zeroValue;
+	private float zeroValue;
 	private boolean hasZeroValue;
 
 	private float loadFactor;
@@ -145,7 +147,7 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 	/**
 	 * Creates a new map with an initial capacity of 51 and a load factor of 0.8.
 	 */
-	public MerryIntIntMap () {
+	public MerryIntFloatMap () {
 		this(51, 0.8f);
 	}
 
@@ -154,7 +156,7 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 	 *
 	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two.
 	 */
-	public MerryIntIntMap (int initialCapacity) {
+	public MerryIntFloatMap (int initialCapacity) {
 		this(initialCapacity, 0.8f);
 	}
 
@@ -164,7 +166,7 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 	 *
 	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two.
 	 */
-	public MerryIntIntMap (int initialCapacity, float loadFactor) {
+	public MerryIntFloatMap (int initialCapacity, float loadFactor) {
 		if (initialCapacity < 0)
 			throw new IllegalArgumentException("initialCapacity must be >= 0: " + initialCapacity);
 		if (loadFactor <= 0f || loadFactor >= 1f)
@@ -180,14 +182,14 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 		shift = Long.numberOfLeadingZeros(mask);
 
 		keyTable = new int[initialCapacity];
-		valueTable = new int[initialCapacity];
+		valueTable = new float[initialCapacity];
 		ib = new int[initialCapacity];
 	}
 
 	/**
 	 * Creates a new map identical to the specified map.
 	 */
-	public MerryIntIntMap (MerryIntIntMap<? extends V> map) {
+	public MerryIntFloatMap (MerryIntFloatMap<? extends V> map) {
 		this((int)(map.ib.length * map.loadFactor), map.loadFactor);
 		System.arraycopy(map.keyTable, 0, keyTable, 0, map.keyTable.length);
 		System.arraycopy(map.valueTable, 0, valueTable, 0, map.valueTable.length);
@@ -258,7 +260,7 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 	/**
 	 * Doesn't return a value, unlike other maps.
 	 */
-	public void put (int key, int value) {
+	public void put (int key, float value) {
 		if (key == 0) {
 			zeroValue = value;
 			if (!hasZeroValue) {
@@ -279,7 +281,7 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 			resize(ib.length << 1);
 		}
 		final int[] keyTable = this.keyTable;
-		final int[] valueTable = this.valueTable;
+		final float[] valueTable = this.valueTable;
 		final int[] ib = this.ib;
 
 		for (int i = b; ; i = (i + 1) & mask) {
@@ -294,7 +296,7 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 			// and keep going until we find a place we can insert
 			else if ((i - ib[i] & mask) < (i - b & mask)) {
 				int temp = keyTable[i];
-				int tv = valueTable[i];
+				float tv = valueTable[i];
 				int tb = ib[i];
 				keyTable[i] = key;
 				valueTable[i] = value;
@@ -307,12 +309,12 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 		// never reached
 	}
 
-	public void putAll (MerryIntIntMap<? extends V> map) {
+	public void putAll (MerryIntFloatMap<? extends V> map) {
 		ensureCapacity(map.size);
 		if (map.hasZeroValue)
 			put(0, map.zeroValue);
 		final int[] keyTable = map.keyTable;
-		final int[] valueTable = map.valueTable;
+		final float[] valueTable = map.valueTable;
 		int k;
 		for (int i = 0, n = keyTable.length; i < n; i++) {
 			if ((k = keyTable[i]) != 0)
@@ -327,7 +329,7 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 	/**
 	 * Skips checks for existing keys.
 	 */
-	private void putResize (int key, int value) {
+	private void putResize (int key, float value) {
 		if (key == 0) {
 			zeroValue = value;
 			if (!hasZeroValue) {
@@ -340,7 +342,7 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 			resize(ib.length << 1);
 		}
 		final int[] keyTable = this.keyTable;
-		final int[] valueTable = this.valueTable;
+		final float[] valueTable = this.valueTable;
 		final int[] ib = this.ib;
 		int b = place(key);
 		for (int i = b; ; i = (i + 1) & mask) {
@@ -355,7 +357,7 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 			// and keep going until we find a place we can insert
 			else if ((i - ib[i] & mask) < (i - b & mask)) {
 				int temp = keyTable[i];
-				int tv = valueTable[i];
+				float tv = valueTable[i];
 				int tb = ib[i];
 				keyTable[i] = key;
 				valueTable[i] = value;
@@ -367,7 +369,7 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 		}
 	}
 
-	public int get (int key, int defaultValue) {
+	public float get (int key, float defaultValue) {
 		if (key == 0) {
 			if (!hasZeroValue)
 				return defaultValue;
@@ -395,7 +397,7 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 	 * Returns the key's current value and increments the stored value. If the key is not in the map, defaultValue + increment is
 	 * put into the map.
 	 */
-	public int getAndIncrement (int key, int defaultValue, int increment) {
+	public float getAndIncrement (int key, int defaultValue, int increment) {
 		final int loc = locateKey(key);
 		// key was not found
 		if (loc == -1) {
@@ -403,16 +405,16 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 			putResize(key, defaultValue + increment);
 			return defaultValue;
 		}
-		final int oldValue = valueTable[loc];
+		final float oldValue = valueTable[loc];
 		valueTable[loc] += increment;
 		return oldValue;
 	}
 
-	public int remove (int key, int defaultValue) {
+	public float remove (int key, int defaultValue) {
 		if (key == 0) {
 			if (!hasZeroValue)
 				return defaultValue;
-			int oldValue = zeroValue;
+			float oldValue = zeroValue;
 			hasZeroValue = false;
 			size--;
 			return oldValue;
@@ -423,10 +425,10 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 			return defaultValue;
 		}
 		final int[] keyTable = this.keyTable;
-		final int[] valueTable = this.valueTable;
+		final float[] valueTable = this.valueTable;
 		final int[] ib = this.ib;
 		keyTable[loc] = 0;
-		int oldValue = valueTable[loc];
+		float oldValue = valueTable[loc];
 		for (int i = (loc + 1) & mask; (keyTable[i] != 0 && (i - ib[i] & mask) != 0); i = (i + 1) & mask) {
 			keyTable[i - 1 & mask] = keyTable[i];
 			valueTable[i - 1 & mask] = valueTable[i];
@@ -501,7 +503,7 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 		if(hasZeroValue && zeroValue == value)
 			return true;
 		final int[] keyTable = this.keyTable;
-		final int[] valueTable = this.valueTable;
+		final float[] valueTable = this.valueTable;
 		for (int i = valueTable.length; i-- > 0; )
 			if (keyTable[i] != 0 && valueTable[i] == value)
 				return true;
@@ -521,7 +523,7 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 	public int findKey (int value, int notFound) {
 		if(hasZeroValue && zeroValue == value) return 0;
 		final int[] keyTable = this.keyTable;
-		final int[] valueTable = this.valueTable;
+		final float[] valueTable = this.valueTable;
 		for (int i = valueTable.length; i-- > 0; ) {
 			int key = keyTable[i];
 			if (key != 0 && valueTable[i] == value)
@@ -549,10 +551,10 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 		shift = Long.numberOfLeadingZeros(mask);
 
 		final int[] oldKeyTable = keyTable;
-		final int[] oldValueTable = valueTable;
+		final float[] oldValueTable = valueTable;
 
 		keyTable = new int[newSize];
-		valueTable = new int[newSize];
+		valueTable = new float[newSize];
 		ib = new int[newSize];
 
 		int oldSize = size;
@@ -569,15 +571,15 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 	public int hashCode () {
 		int h = 0;
 		if (hasZeroValue) {
-			h += zeroValue;
+			h += NumberUtils.floatToRawIntBits(zeroValue);
 		}
 		int[] keyTable = this.keyTable;
-		int[] valueTable = this.valueTable;
+		float[] valueTable = this.valueTable;
 		for (int i = 0, n = keyTable.length; i < n; i++) {
 			int key = keyTable[i];
 			if (key != 0) {
 				h ^= key;
-				h += valueTable[i];
+				h += NumberUtils.floatToRawIntBits(valueTable[i]);
 			}
 		}
 		return h;
@@ -586,9 +588,9 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 	public boolean equals (Object obj) {
 		if (obj == this)
 			return true;
-		if (!(obj instanceof MerryIntIntMap))
+		if (!(obj instanceof MerryIntFloatMap))
 			return false;
-		MerryIntIntMap other = (MerryIntIntMap)obj;
+		MerryIntFloatMap other = (MerryIntFloatMap)obj;
 		if (other.size != size)
 			return false;
 		if (other.hasZeroValue != hasZeroValue)
@@ -598,12 +600,12 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 				return false;
 		}
 		final int[] keyTable = this.keyTable;
-		final int[] valueTable = this.valueTable;
+		final float[] valueTable = this.valueTable;
 		for (int i = 0, n = keyTable.length; i < n; i++) {
 			int key = keyTable[i];
 			if (key != 0) {
-				int otherValue = other.get(key, 0);
-				if (otherValue == 0 && !other.containsKey(key))
+				float otherValue = other.get(key, 0f);
+				if (otherValue == 0f && !other.containsKey(key))
 					return false;
 				if (otherValue != valueTable[i])
 					return false;
@@ -618,7 +620,7 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 		StringBuilder buffer = new StringBuilder(32);
 		buffer.append('[');
 		final int[] keyTable = this.keyTable;
-		final int[] valueTable = this.valueTable;
+		final float[] valueTable = this.valueTable;
 		int i = keyTable.length;
 		if (hasZeroValue) {
 			buffer.append("0=");
@@ -728,7 +730,7 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 
 	static public class Entry {
 		public int key;
-		public int value;
+		public float value;
 
 		public String toString () {
 			return key + "=" + value;
@@ -741,11 +743,11 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 
 		public boolean hasNext;
 
-		final MerryIntIntMap<V> map;
+		final MerryIntFloatMap<V> map;
 		int nextIndex, currentIndex;
 		boolean valid = true;
 
-		public MapIterator (MerryIntIntMap<V> map) {
+		public MapIterator (MerryIntFloatMap<V> map) {
 			this.map = map;
 			reset();
 		}
@@ -777,7 +779,7 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 				throw new IllegalStateException("next must be called before remove.");
 			} else {
 				int[] keyTable = map.keyTable;
-				int[] valueTable = map.valueTable;
+				float[] valueTable = map.valueTable;
 				int[] ib = map.ib;
 				int mask = map.mask;
 				keyTable[currentIndex] = 0;
@@ -798,7 +800,7 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 	static public class Entries<V> extends MapIterator<V> implements Iterable<Entry>, Iterator<Entry> {
 		private Entry entry = new Entry();
 
-		public Entries (MerryIntIntMap map) {
+		public Entries (MerryIntFloatMap map) {
 			super(map);
 		}
 
@@ -839,7 +841,7 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 	}
 
 	static public class Values extends MapIterator<Object> {
-		public Values (MerryIntIntMap map) {
+		public Values (MerryIntFloatMap map) {
 			super(map);
 		}
 
@@ -849,12 +851,12 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 			return hasNext;
 		}
 
-		public int next () {
+		public float next () {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
 				throw new GdxRuntimeException("#iterator() cannot be used nested.");
-			int value = map.valueTable[nextIndex];
+			float value = map.valueTable[nextIndex];
 			currentIndex = nextIndex;
 			findNextIndex();
 			return value;
@@ -867,8 +869,8 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 		/**
 		 * Returns a new array containing the remaining values.
 		 */
-		public IntArray toArray () {
-			IntArray array = new IntArray(true, map.size);
+		public FloatArray toArray () {
+			FloatArray array = new FloatArray(true, map.size);
 			while (hasNext)
 				array.add(next());
 			return array;
@@ -877,7 +879,7 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 		/**
 		 * Adds the remaining values to the specified array.
 		 */
-		public IntArray toArray (IntArray array) {
+		public FloatArray toArray (FloatArray array) {
 			while (hasNext)
 				array.add(next());
 			return array;
@@ -885,7 +887,7 @@ public class MerryIntIntMap<V> implements Iterable<MerryIntIntMap.Entry> {
 	}
 
 	static public class Keys extends MapIterator {
-		public Keys (MerryIntIntMap map) {
+		public Keys (MerryIntFloatMap map) {
 			super(map);
 		}
 

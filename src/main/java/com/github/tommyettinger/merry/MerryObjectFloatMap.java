@@ -539,10 +539,10 @@ public class MerryObjectFloatMap<K> implements Iterable<MerryObjectFloatMap.Entr
 		for (int i = 0, n = keyTable.length; i < n; i++) {
 			K key = keyTable[i];
 			if (key != null) {
-				float otherValue = other.get(key, Float.NaN);
-				if (otherValue != otherValue)
-					return false; // only possible for NaN values
-				else if (otherValue != valueTable[i])
+				float otherValue = other.get(key, 0);
+				if (otherValue == 0 && !other.containsKey(key))
+					return false;
+				if (otherValue != valueTable[i])
 					return false;
 			}
 		}

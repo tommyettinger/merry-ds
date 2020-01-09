@@ -534,10 +534,9 @@ public class MerryObjectIntMap<K> implements Iterable<MerryObjectIntMap.Entry<K>
 			K key = keyTable[i];
 			if (key != null) {
 				int otherValue = other.get(key, 0);
-				if (otherValue == 0f && !other.containsKey(key))
+				if (otherValue == 0 && !other.containsKey(key))
 					return false;
-				int value = valueTable[i];
-				if (otherValue != value)
+				if (otherValue != valueTable[i])
 					return false;
 			}
 		}
