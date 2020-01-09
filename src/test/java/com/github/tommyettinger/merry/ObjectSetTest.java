@@ -24,9 +24,9 @@ import org.junit.Test;
 
 import java.util.Iterator;
 
-public class MerryObjectSetTest {
+public class ObjectSetTest {
 
-	MerryObjectSet hs;
+	ObjectSet hs;
 
 	static Object[] objArray;
 
@@ -37,17 +37,17 @@ public class MerryObjectSetTest {
 	}
 
 	@Test public void test_Constructor () {
-		// Test for method com.github.tommyettinger.merry.MerryObjectSet()
-		MerryObjectSet hs2 = new MerryObjectSet();
-		Assert.assertEquals("Created incorrect MerryObjectSet", 0, hs2.size);
+		// Test for method com.github.tommyettinger.merry.ObjectSet()
+		ObjectSet hs2 = new ObjectSet();
+		Assert.assertEquals("Created incorrect ObjectSet", 0, hs2.size);
 	}
 
 	@Test public void test_ConstructorI () {
-		// Test for method com.github.tommyettinger.merry.MerryObjectSet(int)
-		MerryObjectSet hs2 = new MerryObjectSet(5);
-		Assert.assertEquals("Created incorrect MerryObjectSet", 0, hs2.size);
+		// Test for method com.github.tommyettinger.merry.ObjectSet(int)
+		ObjectSet hs2 = new ObjectSet(5);
+		Assert.assertEquals("Created incorrect ObjectSet", 0, hs2.size);
 		try {
-			new MerryObjectSet(-1);
+			new ObjectSet(-1);
 		} catch (IllegalArgumentException e) {
 			return;
 		}
@@ -55,11 +55,11 @@ public class MerryObjectSetTest {
 	}
 
 	@Test public void test_ConstructorIF () {
-		// Test for method com.github.tommyettinger.merry.MerryObjectSet(int, float)
-		MerryObjectSet hs2 = new MerryObjectSet(5, (float)0.5);
-		Assert.assertEquals("Created incorrect MerryObjectSet", 0, hs2.size);
+		// Test for method com.github.tommyettinger.merry.ObjectSet(int, float)
+		ObjectSet hs2 = new ObjectSet(5, (float)0.5);
+		Assert.assertEquals("Created incorrect ObjectSet", 0, hs2.size);
 		try {
-			new MerryObjectSet(0, 0);
+			new ObjectSet(0, 0);
 		} catch (IllegalArgumentException e) {
 			return;
 		}
@@ -67,15 +67,15 @@ public class MerryObjectSetTest {
 	}
 
 	@Test public void test_ConstructorLjava_util_Collection () {
-		// Test for method com.github.tommyettinger.merry.MerryObjectSet(java.util.Collection)
-		MerryObjectSet hs2 = MerryObjectSet.with(objArray);
+		// Test for method com.github.tommyettinger.merry.ObjectSet(java.util.Collection)
+		ObjectSet hs2 = ObjectSet.with(objArray);
 		for (int counter = 0; counter < objArray.length; counter++)
-			Assert.assertTrue("MerryObjectSet does not contain correct elements", hs.contains(objArray[counter]));
-		Assert.assertTrue("MerryObjectSet created from collection incorrect size", hs2.size == objArray.length);
+			Assert.assertTrue("ObjectSet does not contain correct elements", hs.contains(objArray[counter]));
+		Assert.assertTrue("ObjectSet created from collection incorrect size", hs2.size == objArray.length);
 	}
 
 	@Test public void test_addLjava_lang_Object () {
-		// Test for method boolean com.github.tommyettinger.merry.MerryObjectSet.add(java.lang.Object)
+		// Test for method boolean com.github.tommyettinger.merry.ObjectSet.add(java.lang.Object)
 		int size = hs.size;
 		hs.add(new Integer(8));
 		Assert.assertTrue("Added element already contained by set", hs.size == size);
@@ -85,8 +85,8 @@ public class MerryObjectSetTest {
 	}
 
 	@Test public void test_clear () {
-		// Test for method void com.github.tommyettinger.merry.MerryObjectSet.clear()
-		MerryObjectSet orgSet = new MerryObjectSet(hs);
+		// Test for method void com.github.tommyettinger.merry.ObjectSet.clear()
+		ObjectSet orgSet = new ObjectSet(hs);
 		hs.clear();
 		Iterator i = orgSet.iterator();
 		Assert.assertEquals("Returned non-zero size after clear", 0, hs.size);
@@ -95,23 +95,23 @@ public class MerryObjectSetTest {
 	}
 
 	@Test public void test_containsLjava_lang_Object () {
-		// Test for method boolean com.github.tommyettinger.merry.MerryObjectSet.contains(java.lang.Object)
+		// Test for method boolean com.github.tommyettinger.merry.ObjectSet.contains(java.lang.Object)
 		Assert.assertTrue("Returned false for valid object", hs.contains(objArray[90]));
 		Assert.assertTrue("Returned true for invalid Object", !hs.contains(new Object()));
 
-//		MerryObjectSet s = new MerryObjectSet();
+//		ObjectSet s = new ObjectSet();
 //		s.add(null);
 //		assertTrue("Cannot handle null", s.contains(null));
 	}
 
 	@Test public void test_isEmpty () {
-		// Test for method boolean com.github.tommyettinger.merry.MerryObjectSet.isEmpty()
-		Assert.assertTrue("Empty set returned false", new MerryObjectSet().isEmpty());
+		// Test for method boolean com.github.tommyettinger.merry.ObjectSet.isEmpty()
+		Assert.assertTrue("Empty set returned false", new ObjectSet().isEmpty());
 		Assert.assertTrue("Non-empty set returned true", !hs.isEmpty());
 	}
 
 	@Test public void test_iterator () {
-		// Test for method java.util.Iterator com.github.tommyettinger.merry.MerryObjectSet.iterator()
+		// Test for method java.util.Iterator com.github.tommyettinger.merry.ObjectSet.iterator()
 		Iterator i = hs.iterator();
 		int x = 0;
 		while (i.hasNext()) {
@@ -120,32 +120,32 @@ public class MerryObjectSetTest {
 		}
 		Assert.assertTrue("Returned iteration of incorrect size", hs.size == x);
 
-//		MerryObjectSet s = new MerryObjectSet();
+//		ObjectSet s = new ObjectSet();
 //		s.add(null);
 //		assertNull("Cannot handle null", s.iterator().next());
 	}
 
 	@Test public void test_removeLjava_lang_Object () {
-		// Test for method boolean com.github.tommyettinger.merry.MerryObjectSet.remove(java.lang.Object)
+		// Test for method boolean com.github.tommyettinger.merry.ObjectSet.remove(java.lang.Object)
 		int size = hs.size;
 		hs.remove(new Integer(98));
 		Assert.assertTrue("Failed to remove element", !hs.contains(new Integer(98)));
 		Assert.assertTrue("Failed to decrement set size", hs.size == size - 1);
 
-//		MerryObjectSet s = new MerryObjectSet();
+//		ObjectSet s = new ObjectSet();
 //		s.add(null);
 //		assertTrue("Cannot handle null", s.remove(null));
 	}
 
 	@Test public void test_size () {
-		// Test for method int com.github.tommyettinger.merry.MerryObjectSet.size
+		// Test for method int com.github.tommyettinger.merry.ObjectSet.size
 		Assert.assertTrue("Returned incorrect size", hs.size == (objArray.length));
 		hs.clear();
 		Assert.assertEquals("Cleared set returned non-zero size", 0, hs.size);
 	}
 
 	@Test public void test_toString () {
-		MerryObjectSet s = new MerryObjectSet();
+		ObjectSet s = new ObjectSet();
 		s.add(s);
 		String result = s.toString();
 		Assert.assertTrue("should contain self ref", result.indexOf("(this") > -1);
@@ -156,7 +156,7 @@ public class MerryObjectSetTest {
 	 * is called before a test is executed.
 	 */
 	@Before public void setUp () {
-		hs = new MerryObjectSet();
+		hs = new ObjectSet();
 		for (int i = 0; i < objArray.length; i++)
 			hs.add(objArray[i]);
 //		hs.add(null);

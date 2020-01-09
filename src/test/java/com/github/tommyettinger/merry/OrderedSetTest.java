@@ -23,9 +23,9 @@ import org.junit.Test;
 
 import java.util.Iterator;
 
-public class MerryOrderedSetTest {
+public class OrderedSetTest {
 
-	MerryOrderedSet hs;
+	OrderedSet hs;
 
 	static Object[] objArray;
 
@@ -36,17 +36,17 @@ public class MerryOrderedSetTest {
 	}
 
 	@Test public void test_Constructor () {
-		// Test for method com.github.tommyettinger.merry.MerryOrderedSet()
-		MerryOrderedSet hs2 = new MerryOrderedSet();
-		Assert.assertEquals("Created incorrect MerryOrderedSet", 0, hs2.size);
+		// Test for method com.github.tommyettinger.merry.OrderedSet()
+		OrderedSet hs2 = new OrderedSet();
+		Assert.assertEquals("Created incorrect OrderedSet", 0, hs2.size);
 	}
 
 	@Test public void test_ConstructorI () {
-		// Test for method com.github.tommyettinger.merry.MerryOrderedSet(int)
-		MerryOrderedSet hs2 = new MerryOrderedSet(5);
-		Assert.assertEquals("Created incorrect MerryOrderedSet", 0, hs2.size);
+		// Test for method com.github.tommyettinger.merry.OrderedSet(int)
+		OrderedSet hs2 = new OrderedSet(5);
+		Assert.assertEquals("Created incorrect OrderedSet", 0, hs2.size);
 		try {
-			new MerryOrderedSet(-1);
+			new OrderedSet(-1);
 		} catch (IllegalArgumentException e) {
 			return;
 		}
@@ -54,11 +54,11 @@ public class MerryOrderedSetTest {
 	}
 
 	@Test public void test_ConstructorIF () {
-		// Test for method com.github.tommyettinger.merry.MerryOrderedSet(int, float)
-		MerryOrderedSet hs2 = new MerryOrderedSet(5, (float)0.5);
-		Assert.assertEquals("Created incorrect MerryOrderedSet", 0, hs2.size);
+		// Test for method com.github.tommyettinger.merry.OrderedSet(int, float)
+		OrderedSet hs2 = new OrderedSet(5, (float)0.5);
+		Assert.assertEquals("Created incorrect OrderedSet", 0, hs2.size);
 		try {
-			new MerryOrderedSet(0, 0);
+			new OrderedSet(0, 0);
 		} catch (IllegalArgumentException e) {
 			return;
 		}
@@ -66,15 +66,15 @@ public class MerryOrderedSetTest {
 	}
 
 	@Test public void test_ConstructorLjava_util_Collection () {
-		// Test for method com.github.tommyettinger.merry.MerryOrderedSet(java.util.Collection)
-		MerryOrderedSet hs2 = MerryOrderedSet.with(objArray);
+		// Test for method com.github.tommyettinger.merry.OrderedSet(java.util.Collection)
+		OrderedSet hs2 = OrderedSet.with(objArray);
 		for (int counter = 0; counter < objArray.length; counter++)
-			Assert.assertTrue("MerryOrderedSet does not contain correct elements", hs.contains(objArray[counter]));
-		Assert.assertTrue("MerryOrderedSet created from collection incorrect size", hs2.size == objArray.length);
+			Assert.assertTrue("OrderedSet does not contain correct elements", hs.contains(objArray[counter]));
+		Assert.assertTrue("OrderedSet created from collection incorrect size", hs2.size == objArray.length);
 	}
 
 	@Test public void test_addLjava_lang_Object () {
-		// Test for method boolean com.github.tommyettinger.merry.MerryOrderedSet.add(java.lang.Object)
+		// Test for method boolean com.github.tommyettinger.merry.OrderedSet.add(java.lang.Object)
 		int size = hs.size;
 		hs.add(new Integer(8));
 		Assert.assertTrue("Added element already contained by set", hs.size == size);
@@ -84,8 +84,8 @@ public class MerryOrderedSetTest {
 	}
 
 	@Test public void test_clear () {
-		// Test for method void com.github.tommyettinger.merry.MerryOrderedSet.clear()
-		MerryOrderedSet orgSet = new MerryOrderedSet(hs);
+		// Test for method void com.github.tommyettinger.merry.OrderedSet.clear()
+		OrderedSet orgSet = new OrderedSet(hs);
 		hs.clear();
 		Iterator i = orgSet.iterator();
 		Assert.assertEquals("Returned non-zero size after clear", 0, hs.size);
@@ -95,19 +95,19 @@ public class MerryOrderedSetTest {
 
 	@Test public void test_containsLjava_lang_Object () {
 		// Test for method boolean
-		// com.github.tommyettinger.merry.MerryOrderedSet.contains(java.lang.Object)
+		// com.github.tommyettinger.merry.OrderedSet.contains(java.lang.Object)
 		Assert.assertTrue("Returned false for valid object", hs.contains(objArray[90]));
 		Assert.assertTrue("Returned true for invalid Object", !hs.contains(new Object()));
 	}
 
 	@Test public void test_isEmpty () {
-		// Test for method boolean com.github.tommyettinger.merry.MerryOrderedSet.isEmpty()
-		Assert.assertTrue("Empty set returned false", new MerryOrderedSet().isEmpty());
+		// Test for method boolean com.github.tommyettinger.merry.OrderedSet.isEmpty()
+		Assert.assertTrue("Empty set returned false", new OrderedSet().isEmpty());
 		Assert.assertTrue("Non-empty set returned true", !hs.isEmpty());
 	}
 
 	@Test public void test_iterator () {
-		// Test for method java.util.Iterator com.github.tommyettinger.merry.MerryOrderedSet.iterator()
+		// Test for method java.util.Iterator com.github.tommyettinger.merry.OrderedSet.iterator()
 		Iterator i = hs.iterator();
 		int x = 0;
 		int j;
@@ -124,7 +124,7 @@ public class MerryOrderedSetTest {
 
 	@Test public void test_removeLjava_lang_Object () {
 		// Test for method boolean
-		// com.github.tommyettinger.merry.MerryOrderedSet.remove(java.lang.Object)
+		// com.github.tommyettinger.merry.OrderedSet.remove(java.lang.Object)
 		int size = hs.size;
 		hs.remove(new Integer(98));
 		Assert.assertTrue("Failed to remove element", !hs.contains(new Integer(98)));
@@ -132,7 +132,7 @@ public class MerryOrderedSetTest {
 	}
 
 	@Test public void test_size () {
-		// Test for method int com.github.tommyettinger.merry.MerryOrderedSet.size
+		// Test for method int com.github.tommyettinger.merry.OrderedSet.size
 		Assert.assertTrue("Returned incorrect size", hs.size == (objArray.length));
 		hs.clear();
 		Assert.assertEquals("Cleared set returned non-zero size", 0, hs.size);
@@ -143,7 +143,7 @@ public class MerryOrderedSetTest {
 	 * is called before a test is executed.
 	 */
 	@Before public void setUp () {
-		hs = new MerryOrderedSet();
+		hs = new OrderedSet();
 		for (int i = 0; i < objArray.length; i++)
 			hs.add(objArray[i]);
 	}

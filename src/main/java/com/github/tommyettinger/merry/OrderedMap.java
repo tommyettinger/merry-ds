@@ -18,16 +18,15 @@ package com.github.tommyettinger.merry;
 
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Collections;
-import com.badlogic.gdx.utils.GdxRuntimeException;
 
 import java.util.NoSuchElementException;
 
 /**
- * A {@link MerryObjectMap} that also stores keys in an {@link Array} using the insertion order. Iteration over the
+ * A {@link ObjectMap} that also stores keys in an {@link Array} using the insertion order. Iteration over the
  * {@link #entries()}, {@link #keys()}, and {@link #values()} is ordered and faster than an unordered map. Keys can also
  * be accessed and the order changed using {@link #orderedKeys()}. There is some additional overhead for put and remove.
- * When used for faster iteration versus MerryObjectMap and the order does not actually matter, copying during remove
- * can be greatly reduced by setting {@link Array#ordered} to false for {@link MerryOrderedMap#orderedKeys()}.
+ * When used for faster iteration versus ObjectMap and the order does not actually matter, copying during remove
+ * can be greatly reduced by setting {@link Array#ordered} to false for {@link OrderedMap#orderedKeys()}.
  * <br>
  * See <a href="https://codecapsule.com/2013/11/11/robin-hood-hashing/">Emmanuel Goossaert's blog post</a> for more
  * information on Robin Hood hashing. It isn't state-of-the art in C++ or Rust any more, but newer techniques like Swiss
@@ -88,7 +87,7 @@ import java.util.NoSuchElementException;
  * size.
  * <br>
  * Iteration can be very slow for a set with a large capacity. {@link #clear(int)} and {@link #shrink(int)} can be used to reduce
- * the capacity. {@link MerryOrderedMap} provides much faster iteration.
+ * the capacity. {@link OrderedMap} provides much faster iteration.
  * <br>
  * The <a href="http://codecapsule.com/2013/11/17/robin-hood-hashing-backward-shift-deletion/">backward-shift algorithm</a>
  * used during removal apparently is key to the good performance of this implementation. Thanks to Maksym Stepanenko,
@@ -98,24 +97,24 @@ import java.util.NoSuchElementException;
  * @author Tommy Ettinger
  * @author Nathan Sweet
  */
-public class MerryOrderedMap<K, V> extends MerryObjectMap<K, V> {
+public class OrderedMap<K, V> extends ObjectMap<K, V> {
 	private final Array<K> keys;
 
-	public MerryOrderedMap () {
+	public OrderedMap () {
 		keys = new Array();
 	}
 
-	public MerryOrderedMap (int initialCapacity) {
+	public OrderedMap (int initialCapacity) {
 		super(initialCapacity);
 		keys = new Array(keyTable.length);
 	}
 
-	public MerryOrderedMap (int initialCapacity, float loadFactor) {
+	public OrderedMap (int initialCapacity, float loadFactor) {
 		super(initialCapacity, loadFactor);
 		keys = new Array(keyTable.length);
 	}
 
-	public MerryOrderedMap (MerryOrderedMap<? extends K, ? extends V> map) {
+	public OrderedMap (OrderedMap<? extends K, ? extends V> map) {
 		super(map);
 		keys = new Array(map.keys);
 	}
@@ -163,7 +162,7 @@ public class MerryOrderedMap<K, V> extends MerryObjectMap<K, V> {
 		return null;
 	}
 
-	public void putAll (MerryOrderedMap<K, V> map) {
+	public void putAll (OrderedMap<K, V> map) {
 		ensureCapacity(map.size);
 		final K[] keys = map.keys.items;
 		K k;
@@ -295,7 +294,7 @@ public class MerryOrderedMap<K, V> extends MerryObjectMap<K, V> {
 	static public class OrderedMapEntries<K, V> extends Entries<K, V> {
 		private Array<K> keys;
 
-		public OrderedMapEntries (MerryOrderedMap<K, V> map) {
+		public OrderedMapEntries (OrderedMap<K, V> map) {
 			super(map);
 			keys = map.keys;
 		}
@@ -309,7 +308,7 @@ public class MerryOrderedMap<K, V> extends MerryObjectMap<K, V> {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
-				throw new GdxRuntimeException("#iterator() cannot be used nested.");
+				throw new MerryRuntimeException("#iterator() cannot be used nested.");
 			entry.key = keys.get(nextIndex);
 			entry.value = map.get(entry.key);
 			nextIndex++;
@@ -328,7 +327,7 @@ public class MerryOrderedMap<K, V> extends MerryObjectMap<K, V> {
 	static public class OrderedMapKeys<K> extends Keys<K> {
 		private Array<K> keys;
 
-		public OrderedMapKeys (MerryOrderedMap<K, ?> map) {
+		public OrderedMapKeys (OrderedMap<K, ?> map) {
 			super(map);
 			keys = map.keys;
 		}
@@ -342,7 +341,7 @@ public class MerryOrderedMap<K, V> extends MerryObjectMap<K, V> {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
-				throw new GdxRuntimeException("#iterator() cannot be used nested.");
+				throw new MerryRuntimeException("#iterator() cannot be used nested.");
 			K key = keys.get(nextIndex);
 			currentIndex = nextIndex;
 			nextIndex++;
@@ -353,7 +352,7 @@ public class MerryOrderedMap<K, V> extends MerryObjectMap<K, V> {
 		public void remove () {
 			if (currentIndex < 0)
 				throw new IllegalStateException("next must be called before remove.");
-			((MerryOrderedMap)map).removeIndex(nextIndex - 1);
+			((OrderedMap)map).removeIndex(nextIndex - 1);
 			nextIndex = currentIndex;
 			currentIndex = -1;
 		}
@@ -373,7 +372,7 @@ public class MerryOrderedMap<K, V> extends MerryObjectMap<K, V> {
 	static public class OrderedMapValues<V> extends Values<V> {
 		private Array keys;
 
-		public OrderedMapValues (MerryOrderedMap<?, V> map) {
+		public OrderedMapValues (OrderedMap<?, V> map) {
 			super(map);
 			keys = map.keys;
 		}
@@ -387,7 +386,7 @@ public class MerryOrderedMap<K, V> extends MerryObjectMap<K, V> {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
-				throw new GdxRuntimeException("#iterator() cannot be used nested.");
+				throw new MerryRuntimeException("#iterator() cannot be used nested.");
 			V value = map.get(keys.get(nextIndex));
 			currentIndex = nextIndex;
 			nextIndex++;
@@ -398,7 +397,7 @@ public class MerryOrderedMap<K, V> extends MerryObjectMap<K, V> {
 		public void remove () {
 			if (currentIndex < 0)
 				throw new IllegalStateException("next must be called before remove.");
-			((MerryOrderedMap)map).removeIndex(currentIndex);
+			((OrderedMap)map).removeIndex(currentIndex);
 			nextIndex = currentIndex;
 			currentIndex = -1;
 		}

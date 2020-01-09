@@ -17,7 +17,7 @@
 
 package tests.support;
 
-import com.github.tommyettinger.merry.MerryObjectMap;
+import com.github.tommyettinger.merry.ObjectMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -25,9 +25,9 @@ import static org.junit.Assert.fail;
 
 public class Support_MapTest2 {
 
-	MerryObjectMap<String, String> map;
+	ObjectMap<String, String> map;
 
-	public Support_MapTest2(MerryObjectMap<String, String> m) {
+	public Support_MapTest2(ObjectMap<String, String> m) {
 		map = m;
 		if (!map.isEmpty()) {
 			fail("Map must be empty");

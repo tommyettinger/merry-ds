@@ -16,18 +16,13 @@
 
 package com.github.tommyettinger.merry;
 
-import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.Collections;
-import com.badlogic.gdx.utils.GdxRuntimeException;
-
-import java.util.NoSuchElementException;
-
 /**
- * A {@link MerryObjectSet} that also stores keys in an {@link Array} using the insertion order.
- * {@link #iterator() Iteration} is ordered and faster than an unordered set. Keys can also be accessed and the order
- * changed using {@link #orderedItems()}. There is some additional overhead for put and remove. When used for faster
- * iteration versus ObjectSet and the order does not actually matter, copying during remove can be greatly reduced by
- * setting {@link Array#ordered} to false for {@link MerryOrderedSet#orderedItems()}.
+ * An unordered map that uses identity comparison for its object keys. This implementation uses Robin Hood Hashing with
+ * the backward-shift algorithm for removal, and finds space for keys using Fibonacci hashing instead of the more-common
+ * power-of-two mask. Null keys are not allowed. Null values are allowed. No allocation is done except when growing the
+ * table size. It uses {@link System#identityHashCode(Object)} to hash keys, which may be slower than the hashCode() of
+ * some types that have it already computed, like String; for String keys in particular, identity comparison is a
+ * challenge and some other map should be used instead.
  * <br>
  * See <a href="https://codecapsule.com/2013/11/11/robin-hood-hashing/">Emmanuel Goossaert's blog post</a> for more
  * information on Robin Hood hashing. It isn't state-of-the art in C++ or Rust any more, but newer techniques like Swiss
@@ -88,7 +83,7 @@ import java.util.NoSuchElementException;
  * size.
  * <br>
  * Iteration can be very slow for a set with a large capacity. {@link #clear(int)} and {@link #shrink(int)} can be used to reduce
- * the capacity. {@link MerryOrderedSet} provides much faster iteration.
+ * the capacity. {@link OrderedMap} provides much faster iteration.
  * <br>
  * The <a href="http://codecapsule.com/2013/11/17/robin-hood-hashing-backward-shift-deletion/">backward-shift algorithm</a>
  * used during removal apparently is key to the good performance of this implementation. Thanks to Maksym Stepanenko,
@@ -98,173 +93,61 @@ import java.util.NoSuchElementException;
  * @author Tommy Ettinger
  * @author Nathan Sweet
  */
+public class IdentityMap<K, V> extends ObjectMap<K, V> {
 
-public class MerryOrderedSet<T> extends MerryObjectSet<T> {
-	final Array<T> items;
-	MerryOrderedSetIterator iterator1, iterator2;
-
-	public MerryOrderedSet () {
-		items = new Array();
-	}
-
-	public MerryOrderedSet (int initialCapacity, float loadFactor) {
-		super(initialCapacity, loadFactor);
-		items = new Array(keyTable.length);
-	}
-
-	public MerryOrderedSet (int initialCapacity) {
-		super(initialCapacity);
-		items = new Array(keyTable.length);
-	}
-
-	public MerryOrderedSet (MerryOrderedSet<? extends T> set) {
-		super(set);
-		items = new Array(keyTable.length);
-		items.addAll(set.items);
-	}
-
-	public boolean add (T key) {
-		if (!super.add(key))
-			return false;
-		items.add(key);
-		return true;
+	/**
+	 * Creates a new map with an initial capacity of 51 and a load factor of 0.8.
+	 */
+	public IdentityMap () {
+		super();
 	}
 
 	/**
-	 * Sets the key at the specfied index. Returns true if the key was not already in the set. If this set already contains the
-	 * key, the existing key's index is changed if needed and false is returned.
+	 * Creates a new map with a load factor of 0.8.
+	 *
+	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two.
 	 */
-	public boolean add (T key, int index) {
-		if (!super.add(key)) {
-			int oldIndex = items.indexOf(key, true);
-			if (oldIndex != index)
-				items.insert(index, items.removeIndex(oldIndex));
-			return false;
-		}
-		items.insert(index, key);
-		return true;
+	public IdentityMap (int initialCapacity) {
+		super(initialCapacity);
 	}
 
-	public void addAll (MerryOrderedSet<T> set) {
-		ensureCapacity(set.size);
-		final T[] keys = set.items.items;
-		for (int i = 0, n = set.items.size; i < n; i++) {
-			add(keys[i]);
-		}
+	/**
+	 * Creates a new map with the specified initial capacity and load factor. This map will hold initialCapacity items before
+	 * growing the backing table.
+	 *
+	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two.
+	 */
+	public IdentityMap (int initialCapacity, float loadFactor) {
+		super(initialCapacity, loadFactor);
 	}
 
-	public boolean remove (T key) {
-		if (!super.remove(key))
-			return false;
-		items.removeValue(key, false);
-		return true;
+	/**
+	 * Creates a new map identical to the specified map.
+	 */
+	public IdentityMap (IdentityMap<? extends K, ? extends V> map) {
+		super(map);
 	}
 
-	public T removeIndex (int index) {
-		T key = items.removeIndex(index);
-		super.remove(key);
-		return key;
+	@Override protected int place (K item) {
+		return (int)(System.identityHashCode(item) * 0x9E3779B97F4A7C15L >>> shift);
+		//return (System.identityHashCode(item) & mask);
 	}
 
-	public void clear (int maximumCapacity) {
-		items.clear();
-		super.clear(maximumCapacity);
-	}
-
-	public void clear () {
-		items.clear();
-		super.clear();
-	}
-
-	public Array<T> orderedItems () {
-		return items;
-	}
-
-	public MerryOrderedSetIterator<T> iterator () {
-		if (Collections.allocateIterators)
-			return new MerryOrderedSetIterator(this);
-		if (iterator1 == null) {
-			iterator1 = new MerryOrderedSetIterator(this);
-			iterator2 = new MerryOrderedSetIterator(this);
-		}
-		if (!iterator1.valid) {
-			iterator1.reset();
-			iterator1.valid = true;
-			iterator2.valid = false;
-			return iterator1;
-		}
-		iterator2.reset();
-		iterator2.valid = true;
-		iterator1.valid = false;
-		return iterator2;
-	}
-
-	public String toString () {
-		if (size == 0)
-			return "{}";
-		T[] items = this.items.items;
-		StringBuilder buffer = new StringBuilder(32);
-		buffer.append('{');
-		buffer.append(items[0]);
-		for (int i = 1; i < size; i++) {
-			buffer.append(", ");
-			buffer.append(items[i]);
-		}
-		buffer.append('}');
-		return buffer.toString();
-	}
-
-	public String toString (String separator) {
-		return items.toString(separator);
-	}
-
-	static public class MerryOrderedSetIterator<K> extends MerryObjectSetIterator<K> {
-		private Array<K> items;
-
-		public MerryOrderedSetIterator (MerryOrderedSet<K> set) {
-			super(set);
-			items = set.items;
-		}
-
-		public void reset () {
-			nextIndex = 0;
-			hasNext = set.size > 0;
-		}
-
-		public K next () {
-			if (!hasNext)
-				throw new NoSuchElementException();
-			if (!valid)
-				throw new GdxRuntimeException("#iterator() cannot be used nested.");
-			K key = items.get(nextIndex);
-			nextIndex++;
-			hasNext = nextIndex < set.size;
-			return key;
-		}
-
-		public void remove () {
-			if (nextIndex < 0)
-				throw new IllegalStateException("next must be called before remove.");
-			nextIndex--;
-			((MerryOrderedSet)set).removeIndex(nextIndex);
-		}
-
-		public Array<K> toArray (Array<K> array) {
-			array.addAll(items, nextIndex, items.size - nextIndex);
-			nextIndex = items.size;
-			hasNext = false;
-			return array;
-		}
-
-		public Array<K> toArray () {
-			return toArray(new Array(true, set.size - nextIndex));
+	@Override int locateKey (K key, int placement) {
+		for (int i = placement; ; i = i + 1 & mask) {
+			// empty space is available
+			if (keyTable[i] == null) {
+				return -1;
+			}
+			if (key == (keyTable[i])) {
+				return i;
+			}
+			// ib holds the initial bucket position before probing offset the item
+			// if the distance required to probe to a position is greater than the
+			// stored distance for an item at that position, we can Robin Hood and swap them.
+			if ((i - ib[i] & mask) < (i - placement & mask)) {
+				return -1;
+			}
 		}
 	}
-
-	static public <T> MerryOrderedSet<T> with (T... array) {
-		MerryOrderedSet<T> set = new MerryOrderedSet<>();
-		set.addAll(array);
-		return set;
-	}
-
 }

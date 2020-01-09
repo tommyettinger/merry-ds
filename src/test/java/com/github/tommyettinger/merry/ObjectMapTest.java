@@ -29,8 +29,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 
-public class MerryObjectMapTest {
-	class MockMap extends MerryObjectMap {
+public class ObjectMapTest {
+	class MockMap extends ObjectMap {
 		public Entries entries () {
 			return null;
 		}
@@ -40,7 +40,7 @@ public class MerryObjectMapTest {
 		}
 	}
 
-	private static class MockMapNull extends MerryObjectMap {
+	private static class MockMapNull extends ObjectMap {
 		public Entries entries () {
 			return null;
 		}
@@ -86,7 +86,7 @@ public class MerryObjectMapTest {
 
 	}
 
-	MerryObjectMap hm;
+	ObjectMap hm;
 
 	final static int hmSize = 1000;
 
@@ -104,65 +104,65 @@ public class MerryObjectMapTest {
 	}
 
 	@Test public void test_Constructor () {
-		// Test for method com.github.tommyettinger.merry.MerryObjectMap()
-		new Support_MapTest2(new MerryObjectMap<String, String>()).runTest();
+		// Test for method com.github.tommyettinger.merry.ObjectMap()
+		new Support_MapTest2(new ObjectMap<String, String>()).runTest();
 
-		MerryObjectMap hm2 = new MerryObjectMap<>();
-		Assert.assertEquals("Created incorrect MerryObjectMap", 0, hm2.size);
+		ObjectMap hm2 = new ObjectMap<>();
+		Assert.assertEquals("Created incorrect ObjectMap", 0, hm2.size);
 	}
 
 	@Test public void test_ConstructorI () {
-		// Test for method com.github.tommyettinger.merry.MerryObjectMap(int)
-		MerryObjectMap hm2 = new MerryObjectMap(5);
-		Assert.assertEquals("Created incorrect MerryObjectMap", 0, hm2.size);
+		// Test for method com.github.tommyettinger.merry.ObjectMap(int)
+		ObjectMap hm2 = new ObjectMap(5);
+		Assert.assertEquals("Created incorrect ObjectMap", 0, hm2.size);
 		try {
-			new MerryObjectMap(-1);
+			new ObjectMap(-1);
 		} catch (IllegalArgumentException e) {
 			return;
 		}
 		Assert.fail("Failed to throw IllegalArgumentException for initial capacity < 0");
 
-		MerryObjectMap empty = new MerryObjectMap(0);
+		ObjectMap empty = new ObjectMap(0);
 		Assert.assertNull("Empty hashmap access", empty.get("nothing"));
 		empty.put("something", "here");
 		Assert.assertTrue("cannot get element", empty.get("something") == "here");
 	}
 
 	@Test public void test_ConstructorIF () {
-		// Test for method com.github.tommyettinger.merry.MerryObjectMap(int, float)
-		MerryObjectMap hm2 = new MerryObjectMap(5, (float)0.5);
-		Assert.assertEquals("Created incorrect MerryObjectMap", 0, hm2.size);
+		// Test for method com.github.tommyettinger.merry.ObjectMap(int, float)
+		ObjectMap hm2 = new ObjectMap(5, (float)0.5);
+		Assert.assertEquals("Created incorrect ObjectMap", 0, hm2.size);
 		try {
-			new MerryObjectMap(0, 0);
+			new ObjectMap(0, 0);
 		} catch (IllegalArgumentException e) {
 			return;
 		}
 		Assert.fail("Failed to throw IllegalArgumentException for initial load factor <= 0");
 
-		MerryObjectMap empty = new MerryObjectMap(0, 0.75f);
+		ObjectMap empty = new ObjectMap(0, 0.75f);
 		Assert.assertNull("Empty hashtable access", empty.get("nothing"));
 		empty.put("something", "here");
 		Assert.assertTrue("cannot get element", empty.get("something") == "here");
 	}
 
 	@Test public void test_ConstructorLjava_util_Map () {
-		MerryObjectMap myMap = new MerryOrderedMap();
+		ObjectMap myMap = new OrderedMap();
 		for (int counter = 0; counter < hmSize; counter++)
 			myMap.put(objArray2[counter], objArray[counter]);
-		MerryObjectMap hm2 = new MerryObjectMap(myMap);
+		ObjectMap hm2 = new ObjectMap(myMap);
 		for (int counter = 0; counter < hmSize; counter++)
-			Assert.assertTrue("Failed to construct correct MerryObjectMap",
+			Assert.assertTrue("Failed to construct correct ObjectMap",
 				hm.get(objArray2[counter]) == hm2.get(objArray2[counter]));
 
 //        try {
-//            MerryObjectMap mockMap = new MockMapNull();
-//            hm = new MerryObjectMap(mockMap);
+//            ObjectMap mockMap = new MockMapNull();
+//            hm = new ObjectMap(mockMap);
 //            fail("Should throw NullPointerException");
 //        } catch (NullPointerException e) {
 //            //empty
 //        }
 
-		MerryObjectMap map = new MerryObjectMap();
+		ObjectMap map = new ObjectMap();
 		map.put("a", "a");
 		SubMap map2 = new SubMap(map);
 		Assert.assertTrue(map2.containsKey("a"));
@@ -176,7 +176,7 @@ public class MerryObjectMapTest {
 			Assert.assertNull("Failed to clear all elements", hm.get(objArray2[i]));
 
 		// Check clear on a large loaded map of Integer keys
-		MerryObjectMap<Integer, String> map = new MerryObjectMap<Integer, String>();
+		ObjectMap<Integer, String> map = new ObjectMap<Integer, String>();
 		for (int i = -32767; i < 32768; i++) {
 			map.put(i, "foobar");
 		}
@@ -189,11 +189,11 @@ public class MerryObjectMapTest {
 
 	@Test public void test_containsKeyLjava_lang_Object () {
 		// Test for method boolean
-		// com.github.tommyettinger.merry.MerryObjectMap.containsKey(java.lang.Object)
+		// com.github.tommyettinger.merry.ObjectMap.containsKey(java.lang.Object)
 		Assert.assertTrue("Returned false for valid key", hm.containsKey(new Integer(876).toString()));
 		Assert.assertTrue("Returned true for invalid key", !hm.containsKey("KKDKDKD"));
 
-//		MerryObjectMap m = new MerryObjectMap();
+//		ObjectMap m = new ObjectMap();
 //		m.put(null, "test");
 //		assertTrue("Failed with null key", m.containsKey(null));
 //		assertTrue("Failed with missing key matching null hash", !m
@@ -202,22 +202,22 @@ public class MerryObjectMapTest {
 
 	@Test public void test_containsValueLjava_lang_Object () {
 		// Test for method boolean
-		// com.github.tommyettinger.merry.MerryObjectMap.containsValue(java.lang.Object)
+		// com.github.tommyettinger.merry.ObjectMap.containsValue(java.lang.Object)
 		Assert.assertTrue("Returned false for valid value", hm.containsValue(new Integer(875), false));
 		Assert.assertTrue("Returned true for invalid valie", !hm.containsValue(new Integer(-9), false));
 	}
 
 	@Test public void test_entrySet () {
-		// Test for method java.util.Set com.github.tommyettinger.merry.MerryObjectMap.entrySet(
-		MerryObjectMap.Entries s = hm.entries();
+		// Test for method java.util.Set com.github.tommyettinger.merry.ObjectMap.entrySet(
+		ObjectMap.Entries s = hm.entries();
 		Iterator i = s.iterator();
 		Assert.assertTrue("Returned set of incorrect size", hm.size == s.map.size);
 		while (i.hasNext()) {
-			MerryObjectMap.Entry m = (MerryObjectMap.Entry)i.next();
+			ObjectMap.Entry m = (ObjectMap.Entry)i.next();
 			Assert.assertTrue("Returned incorrect entry set", hm.containsKey(m.key) && hm.containsValue(m.value, false));
 		}
 
-		MerryObjectMap.Entries iter = s.iterator();
+		ObjectMap.Entries iter = s.iterator();
 		iter.reset();
 		s.map.remove(iter.next());
 		Assert.assertEquals(1001, s.map.size);
@@ -225,12 +225,12 @@ public class MerryObjectMapTest {
 
 	@Test public void test_getLjava_lang_Object () {
 		// Test for method java.lang.Object
-		// com.github.tommyettinger.merry.MerryObjectMap.get(java.lang.Object)
+		// com.github.tommyettinger.merry.ObjectMap.get(java.lang.Object)
 		Assert.assertNull("Get returned non-null for non existent key", hm.get("T"));
 		hm.put("T", "HELLO");
 		Assert.assertEquals("Get returned incorrect value for existing key", "HELLO", hm.get("T"));
 
-//		MerryObjectMap m = new MerryObjectMap();
+//		ObjectMap m = new ObjectMap();
 //		m.put(null, "test");
 //		assertEquals("Failed with null key", "test", m.get(null));
 //		assertNull("Failed with missing key matching null hash", m
@@ -238,7 +238,7 @@ public class MerryObjectMapTest {
 
 		// Regression for HARMONY-206
 		ReusableKey k = new ReusableKey();
-		MerryObjectMap map = new MerryObjectMap();
+		ObjectMap map = new ObjectMap();
 		k.setKey(1);
 		map.put(k, "value1");
 
@@ -281,7 +281,7 @@ public class MerryObjectMapTest {
 //        assertTrue("Failed to find proxy object as value", hm.containsValue(proxyValue));
 //        
 //        // Proxy key and value
-//        MerryObjectMap map = new MerryObjectMap();
+//        ObjectMap map = new ObjectMap();
 //        map.put(proxyKey, proxyValue);
 //        assertTrue("Failed to find proxy key", map.containsKey(proxyKey));
 //        assertEquals(1, map.size());
@@ -291,25 +291,25 @@ public class MerryObjectMapTest {
 //	}
 
 	@Test public void test_isEmpty () {
-		// Test for method boolean com.github.tommyettinger.merry.MerryObjectMap.isEmpty()
-		Assert.assertTrue("Returned false for new map", new MerryObjectMap().isEmpty());
+		// Test for method boolean com.github.tommyettinger.merry.ObjectMap.isEmpty()
+		Assert.assertTrue("Returned false for new map", new ObjectMap().isEmpty());
 		Assert.assertTrue("Returned true for non-empty", !hm.isEmpty());
 	}
 
 	@Test public void test_keySet () {
-		// Test for method java.util.Set com.github.tommyettinger.merry.MerryObjectMap.keySet()
-		MerryObjectMap.Keys s = hm.keys();
+		// Test for method java.util.Set com.github.tommyettinger.merry.ObjectMap.keySet()
+		ObjectMap.Keys s = hm.keys();
 		Assert.assertTrue("Returned set of incorrect size()", s.map.size == hm.size);
 //		for (int i = 0; i < objArray.length; i++)
 //			assertTrue("Returned set does not contain all keys", s
 //					.contains(objArray[i].toString()));
 
-//		MerryObjectMap m = new MerryObjectMap();
+//		ObjectMap m = new ObjectMap();
 //		m.put(null, "test");
 //		assertTrue("Failed with null key", m.keys().contains(null));
 //		assertNull("Failed with null key", m.keys().iterator().next());
 
-		MerryObjectMap map = new MerryObjectMap(101);
+		ObjectMap map = new ObjectMap(101);
 		map.put(new Integer(1), "1");
 		map.put(new Integer(102), "102");
 		map.put(new Integer(203), "203");
@@ -326,7 +326,7 @@ public class MerryObjectMapTest {
 		Assert.assertEquals("Wrong size", 1, map.size);
 		Assert.assertTrue("Wrong contents", map.keys().iterator().next().equals(list.get(0)));
 
-		MerryObjectMap map2 = new MerryObjectMap(101);
+		ObjectMap map2 = new ObjectMap(101);
 		map2.put(new Integer(1), "1");
 		map2.put(new Integer(4), "4");
 		Iterator it2 = map2.keys().iterator();
@@ -347,7 +347,7 @@ public class MerryObjectMapTest {
 		hm.put("KEY", "VALUE");
 		Assert.assertEquals("Failed to install key/value pair", "VALUE", hm.get("KEY"));
 
-//        MerryObjectMap<Object,Object> m = new MerryObjectMap<Object,Object>();
+//        ObjectMap<Object,Object> m = new ObjectMap<Object,Object>();
 //        m.put(new Short((short) 0), "short");
 //        m.put(null, "test");
 //        m.put(new Integer(0), "int");
@@ -357,7 +357,7 @@ public class MerryObjectMapTest {
 //                .get(new Integer(0)));
 
 		// Check my actual key instance is returned
-		MerryObjectMap<Integer, String> map = new MerryObjectMap<Integer, String>();
+		ObjectMap<Integer, String> map = new ObjectMap<Integer, String>();
 		for (int i = -32767; i < 32768; i++) {
 			map.put(i, "foobar");
 		}
@@ -389,7 +389,7 @@ public class MerryObjectMapTest {
 		Assert.assertTrue("Did not find new key instance in hashmap", found);
 
 		// Ensure keys with identical hashcode are stored separately
-		MerryObjectMap<Object, Object> objmap = new MerryObjectMap<Object, Object>();
+		ObjectMap<Object, Object> objmap = new ObjectMap<Object, Object>();
 		for (int i = 0; i < 32768; i++) {
 			objmap.put(i, "foobar");
 		}
@@ -412,21 +412,21 @@ public class MerryObjectMapTest {
 	}
 
 	@Test public void test_putAllLjava_util_Map () {
-		// Test for method void com.github.tommyettinger.merry.MerryObjectMap.putAll(java.util.Map)
-		MerryObjectMap hm2 = new MerryObjectMap();
+		// Test for method void com.github.tommyettinger.merry.ObjectMap.putAll(java.util.Map)
+		ObjectMap hm2 = new ObjectMap();
 		hm2.putAll(hm);
 		for (int i = 0; i < 1000; i++)
 			Assert.assertTrue("Failed to clear all elements", hm2.get(new Integer(i).toString()).equals((new Integer(i))));
 
-//        MerryObjectMap mockMap = new MockMap();
-//        hm2 = new MerryObjectMap();
+//        ObjectMap mockMap = new MockMap();
+//        hm2 = new ObjectMap();
 //        hm2.putAll(mockMap);
 //        assertEquals("Size should be 0", 0, hm2.size);
 	}
 
 //    @Test
 //    public void test_putAllLjava_util_Map_Null() {
-//        MerryObjectMap hashMap = new MerryObjectMap();
+//        ObjectMap hashMap = new ObjectMap();
 //        try {
 //            hashMap.putAll(new MockMapNull());
 //            Assert.fail("Should throw NullPointerException");
@@ -435,7 +435,7 @@ public class MerryObjectMapTest {
 //        }
 //
 ////        try {
-////            hashMap = new MerryObjectMap(new MockMapNull());
+////            hashMap = new ObjectMap(new MockMapNull());
 ////            fail("Should throw NullPointerException");
 ////        } catch (NullPointerException e) {
 ////            // expected.
@@ -451,13 +451,13 @@ public class MerryObjectMapTest {
 		Assert.assertTrue("Failed to decrement size", hm.size == (size - 1));
 		Assert.assertNull("Remove of non-existent key returned non-null", hm.remove("LCLCLC"));
 
-//		MerryObjectMap m = new MerryObjectMap();
+//		ObjectMap m = new ObjectMap();
 //		m.put(null, "test");
 //		assertNull("Failed with same hash as null",
 //				m.remove(new Integer(0)));
 //		assertEquals("Failed with null key", "test", m.remove(null));
 
-		MerryObjectMap<Integer, Object> map = new MerryObjectMap<Integer, Object>();
+		ObjectMap<Integer, Object> map = new ObjectMap<Integer, Object>();
 		for (int i = 0; i < 32768; i++) {
 			map.put(i, "const");
 		}
@@ -483,7 +483,7 @@ public class MerryObjectMapTest {
 		}
 
 		// Ensure keys with identical hashcode are removed properly
-		map = new MerryObjectMap<Integer, Object>();
+		map = new ObjectMap<Integer, Object>();
 		for (int i = -32767; i < 32768; i++) {
 			map.put(i, "foobar");
 		}
@@ -500,7 +500,7 @@ public class MerryObjectMapTest {
 	 */
 	@Test public void test_rehash () {
 		// This map should rehash on adding the ninth element.
-		MerryObjectMap<MyKey, Integer> hm = new MerryObjectMap<MyKey, Integer>(10, 0.5f);
+		ObjectMap<MyKey, Integer> hm = new ObjectMap<MyKey, Integer>(10, 0.5f);
 
 		// Ordered set of keys.
 		MyKey[] keyOrder = new MyKey[9];
@@ -528,36 +528,36 @@ public class MerryObjectMapTest {
 	}
 
 	@Test public void test_size () {
-		// Test for method int com.github.tommyettinger.merry.MerryObjectMap.size()
+		// Test for method int com.github.tommyettinger.merry.ObjectMap.size()
 		Assert.assertTrue("Returned incorrect size", hm.size == (objArray.length + 1));
 	}
 
 	@Test public void test_values () {
-		// Test for method java.util.Collection com.github.tommyettinger.merry.MerryObjectMap.values()
-		MerryObjectMap.Values c = hm.values();
+		// Test for method java.util.Collection com.github.tommyettinger.merry.ObjectMap.values()
+		ObjectMap.Values c = hm.values();
 		Assert.assertTrue("Returned collection of incorrect size()", c.map.size == hm.size);
 //		for (int i = 0; i < objArray.length; i++)
 //			assertTrue("Returned collection does not contain all keys", c
 //					.contains(objArray[i]));
 
-		MerryObjectMap myMerryObjectMap = new MerryObjectMap();
+		ObjectMap myObjectMap = new ObjectMap();
 		for (int i = 0; i < 100; i++)
-			myMerryObjectMap.put(objArray2[i], objArray[i]);
-		MerryObjectMap.Values values = myMerryObjectMap.values();
+			myObjectMap.put(objArray2[i], objArray[i]);
+		ObjectMap.Values values = myObjectMap.values();
 //		new Support_UnmodifiableCollectionTest(
-//				"Test Returned Collection From MerryObjectMap.values()", values)
+//				"Test Returned Collection From ObjectMap.values()", values)
 //				.runTest();
 		values.hasNext();
 		Object removed = values.next();
 		values.remove();
 		Assert.assertTrue("Removing from the values collection should remove from the original map",
-			!myMerryObjectMap.containsValue(removed, false));
+			!myObjectMap.containsValue(removed, false));
 
 	}
 
 	@Test public void test_toString () {
 
-		MerryObjectMap m = new MerryObjectMap();
+		ObjectMap m = new ObjectMap();
 		m.put(m, m);
 		String result = m.toString();
 		Assert.assertTrue("should contain self ref", result.indexOf("(this") > -1);
@@ -587,7 +587,7 @@ public class MerryObjectMapTest {
 //    
 //	public void test_Map_Entry_hashCode() {
 //        //Related to HARMONY-403
-//	    MerryObjectMap<Integer, Integer> map = new MerryObjectMap<Integer, Integer>(10);
+//	    ObjectMap<Integer, Integer> map = new ObjectMap<Integer, Integer>(10);
 //	    Integer key = new Integer(1);
 //	    Integer val = new Integer(2);
 //	    map.put(key, val);
@@ -604,13 +604,13 @@ public class MerryObjectMapTest {
 	 * Regression test for HY-4750
 	 */
 	@Test public void test_EntrySet () {
-//        MerryObjectMap map = new MerryObjectMap();
+//        ObjectMap map = new ObjectMap();
 //        map.put(new Integer(1), "ONE");
 
-//        MerryObjectMap.Entries entrySet = map.entries();
+//        ObjectMap.Entries entrySet = map.entries();
 //        Iterator e = entrySet.iterator();
 //        Object real = e.next();
-//        MerryObjectMap.Entry copyEntry = new MockEntry();
+//        ObjectMap.Entry copyEntry = new MockEntry();
 //        assertEquals(real, copyEntry);
 		//assertTrue(entrySet.contains(copyEntry));
 
@@ -618,7 +618,7 @@ public class MerryObjectMapTest {
 		//assertFalse(entrySet.contains(copyEntry));
 	}
 
-	private static class MockEntry extends MerryObjectMap.Entry {
+	private static class MockEntry extends ObjectMap.Entry {
 
 		public Object getKey () {
 			return new Integer(1);
@@ -638,15 +638,15 @@ public class MerryObjectMapTest {
 	 * is called before a test is executed.
 	 */
 	@Before public void setUp () {
-		hm = new MerryObjectMap();
+		hm = new ObjectMap();
 		for (int i = 0; i < objArray.length; i++)
 			hm.put(objArray2[i], objArray[i]);
 		hm.put("test", null);
 //		hm.put(null, "test");
 	}
 
-	class SubMap<K, V> extends MerryObjectMap<K, V> {
-		public SubMap (MerryObjectMap<? extends K, ? extends V> m) {
+	class SubMap<K, V> extends ObjectMap<K, V> {
+		public SubMap (ObjectMap<? extends K, ? extends V> m) {
 			super(m);
 		}
 

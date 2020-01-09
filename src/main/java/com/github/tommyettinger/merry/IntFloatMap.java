@@ -17,16 +17,15 @@
 package com.github.tommyettinger.merry;
 
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Collections;
-import com.badlogic.gdx.utils.GdxRuntimeException;
+import com.badlogic.gdx.utils.FloatArray;
 import com.badlogic.gdx.utils.IntArray;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * An unordered map that uses int keys. This implementation uses Robin Hood Hashing with the backward-shift
+ * An unordered map that uses int keys and float values. This implementation uses Robin Hood Hashing with the backward-shift
  * algorithm for removal, and finds space for keys using Fibonacci hashing instead of the more-common power-of-two mask.
  * Null values are allowed. No allocation is done except when growing the table size.
  * <br>
@@ -79,7 +78,7 @@ import java.util.NoSuchElementException;
  * hash collisions in IntMap until the map resized enough to consider the upper bits of keys. Fibonacci hashing takes
  * some time, but it's worth it in this case because it avoids potentially many collisions, which would have a much
  * worse effect on performance. In one benchmark on these half-and-half int keys, IntMap gets 19.13 million keys entered
- * per second, and MerryIntMap gets 48.82 million of the same kind of keys, about a 2.5x multiplier on throughput.
+ * per second, and IntMap gets 48.82 million of the same kind of keys, about a 2.5x multiplier on throughput.
  * <br>
  * In addition to Fibonacci hashing to figure out initial placement in the key array, this uses Robin Hood hashing to
  * mitigate problems from collisions. The IntMap and IntSet classes in libGDX use Cuckoo hashing with a stash, but
@@ -98,7 +97,7 @@ import java.util.NoSuchElementException;
  * size.
  * <br>
  * Iteration can be very slow for a set with a large capacity. {@link #clear(int)} and {@link #shrink(int)} can be used to reduce
- * the capacity. {@link MerryOrderedMap} provides much faster iteration if you have Object keys.
+ * the capacity. {@link OrderedMap} provides much faster iteration if you have Object keys.
  * <br>
  * The <a href="http://codecapsule.com/2013/11/17/robin-hood-hashing-backward-shift-deletion/">backward-shift algorithm</a>
  * used during removal apparently is key to the good performance of this implementation. Thanks to Maksym Stepanenko,
@@ -108,14 +107,14 @@ import java.util.NoSuchElementException;
  * @author Tommy Ettinger
  * @author Nathan Sweet
  */
-public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
+public class IntFloatMap<V> implements Iterable<IntFloatMap.Entry> {
 	public int size;
 
 	private int[] keyTable;
-	private V[] valueTable;
+	private float[] valueTable;
 	private int[] ib;
 
-	private V zeroValue;
+	private float zeroValue;
 	private boolean hasZeroValue;
 
 	private float loadFactor;
@@ -146,7 +145,7 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 	/**
 	 * Creates a new map with an initial capacity of 51 and a load factor of 0.8.
 	 */
-	public MerryIntMap () {
+	public IntFloatMap () {
 		this(51, 0.8f);
 	}
 
@@ -155,7 +154,7 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 	 *
 	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two.
 	 */
-	public MerryIntMap (int initialCapacity) {
+	public IntFloatMap (int initialCapacity) {
 		this(initialCapacity, 0.8f);
 	}
 
@@ -165,7 +164,7 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 	 *
 	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two.
 	 */
-	public MerryIntMap (int initialCapacity, float loadFactor) {
+	public IntFloatMap (int initialCapacity, float loadFactor) {
 		if (initialCapacity < 0)
 			throw new IllegalArgumentException("initialCapacity must be >= 0: " + initialCapacity);
 		if (loadFactor <= 0f || loadFactor >= 1f)
@@ -181,14 +180,14 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 		shift = Long.numberOfLeadingZeros(mask);
 
 		keyTable = new int[initialCapacity];
-		valueTable = (V[])new Object[initialCapacity];
+		valueTable = new float[initialCapacity];
 		ib = new int[initialCapacity];
 	}
 
 	/**
 	 * Creates a new map identical to the specified map.
 	 */
-	public MerryIntMap (MerryIntMap<? extends V> map) {
+	public IntFloatMap (IntFloatMap<? extends V> map) {
 		this((int)(map.ib.length * map.loadFactor), map.loadFactor);
 		System.arraycopy(map.keyTable, 0, keyTable, 0, map.keyTable.length);
 		System.arraycopy(map.valueTable, 0, valueTable, 0, map.valueTable.length);
@@ -255,31 +254,32 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 			}
 		}
 	}
-
-	public V put (int key, V value) {
+	
+	/**
+	 * Doesn't return a value, unlike other maps.
+	 */
+	public void put (int key, float value) {
 		if (key == 0) {
-			V oldValue = zeroValue;
 			zeroValue = value;
 			if (!hasZeroValue) {
 				hasZeroValue = true;
 				size++;
 			}
-			return oldValue;
+			return;
 		}
 
 		int b = place(key);
 		int loc = locateKey(key, b);
 		// an identical key already exists
 		if (loc != -1) {
-			V tv = valueTable[loc];
 			valueTable[loc] = value;
-			return tv;
+			return;
 		}
 		if (++size >= threshold) {
 			resize(ib.length << 1);
 		}
 		final int[] keyTable = this.keyTable;
-		final V[] valueTable = this.valueTable;
+		final float[] valueTable = this.valueTable;
 		final int[] ib = this.ib;
 
 		for (int i = b; ; i = (i + 1) & mask) {
@@ -288,13 +288,13 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 				keyTable[i] = key;
 				valueTable[i] = value;
 				ib[i] = b;
-				return null;
+				return;
 			}
 			// if there is a key with a lower probe distance, we swap with it
 			// and keep going until we find a place we can insert
 			else if ((i - ib[i] & mask) < (i - b & mask)) {
 				int temp = keyTable[i];
-				V tv = valueTable[i];
+				float tv = valueTable[i];
 				int tb = ib[i];
 				keyTable[i] = key;
 				valueTable[i] = value;
@@ -307,12 +307,12 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 		// never reached
 	}
 
-	public void putAll (MerryIntMap<? extends V> map) {
+	public void putAll (IntFloatMap<? extends V> map) {
 		ensureCapacity(map.size);
 		if (map.hasZeroValue)
 			put(0, map.zeroValue);
 		final int[] keyTable = map.keyTable;
-		final V[] valueTable = map.valueTable;
+		final float[] valueTable = map.valueTable;
 		int k;
 		for (int i = 0, n = keyTable.length; i < n; i++) {
 			if ((k = keyTable[i]) != 0)
@@ -327,7 +327,7 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 	/**
 	 * Skips checks for existing keys.
 	 */
-	private void putResize (int key, V value) {
+	private void putResize (int key, float value) {
 		if (key == 0) {
 			zeroValue = value;
 			if (!hasZeroValue) {
@@ -340,7 +340,7 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 			resize(ib.length << 1);
 		}
 		final int[] keyTable = this.keyTable;
-		final V[] valueTable = this.valueTable;
+		final float[] valueTable = this.valueTable;
 		final int[] ib = this.ib;
 		int b = place(key);
 		for (int i = b; ; i = (i + 1) & mask) {
@@ -355,7 +355,7 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 			// and keep going until we find a place we can insert
 			else if ((i - ib[i] & mask) < (i - b & mask)) {
 				int temp = keyTable[i];
-				V tv = valueTable[i];
+				float tv = valueTable[i];
 				int tb = ib[i];
 				keyTable[i] = key;
 				valueTable[i] = value;
@@ -367,31 +367,7 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 		}
 	}
 
-	public V get (int key) {
-		if (key == 0) {
-			if (!hasZeroValue)
-				return null;
-			return zeroValue;
-		}
-		final int placement = place(key);
-		for (int i = placement; ; i = i + 1 & mask) {
-			// empty space is available
-			if (keyTable[i] == 0) {
-				return null;
-			}
-			if (key == (keyTable[i])) {
-				return valueTable[i];
-			}
-			// ib holds the initial bucket position before probing offset the item
-			// if the distance required to probe to a position is greater than the
-			// stored distance for an item at that position, we can Robin Hood and swap them.
-			if ((i - ib[i] & mask) < (i - placement & mask)) {
-				return null;
-			}
-		}
-	}
-
-	public V get (int key, V defaultValue) {
+	public float get (int key, float defaultValue) {
 		if (key == 0) {
 			if (!hasZeroValue)
 				return defaultValue;
@@ -414,13 +390,29 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 			}
 		}
 	}
+	
+	/**
+	 * Returns the key's current value and increments the stored value. If the key is not in the map, defaultValue + increment is
+	 * put into the map.
+	 */
+	public float getAndIncrement (int key, int defaultValue, int increment) {
+		final int loc = locateKey(key);
+		// key was not found
+		if (loc == -1) {
+			// because we know there's no existing duplicate key, we can use putResize().
+			putResize(key, defaultValue + increment);
+			return defaultValue;
+		}
+		final float oldValue = valueTable[loc];
+		valueTable[loc] += increment;
+		return oldValue;
+	}
 
-	public V remove (int key) {
+	public float remove (int key, int defaultValue) {
 		if (key == 0) {
 			if (!hasZeroValue)
-				return null;
-			V oldValue = zeroValue;
-			zeroValue = null;
+				return defaultValue;
+			float oldValue = zeroValue;
 			hasZeroValue = false;
 			size--;
 			return oldValue;
@@ -428,20 +420,18 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 
 		int loc = locateKey(key);
 		if (loc == -1) {
-			return null;
+			return defaultValue;
 		}
 		final int[] keyTable = this.keyTable;
-		final V[] valueTable = this.valueTable;
+		final float[] valueTable = this.valueTable;
 		final int[] ib = this.ib;
 		keyTable[loc] = 0;
-		V oldValue = valueTable[loc];
-		valueTable[loc] = null;
+		float oldValue = valueTable[loc];
 		for (int i = (loc + 1) & mask; (keyTable[i] != 0 && (i - ib[i] & mask) != 0); i = (i + 1) & mask) {
 			keyTable[i - 1 & mask] = keyTable[i];
 			valueTable[i - 1 & mask] = valueTable[i];
 			ib[i - 1 & mask] = ib[i];
 			keyTable[i] = 0;
-			valueTable[i] = null;
 			ib[i] = 0;
 		}
 		--size;
@@ -484,7 +474,6 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 			clear();
 			return;
 		}
-		zeroValue = null;
 		hasZeroValue = false;
 		size = 0;
 		resize(maximumCapacity);
@@ -494,49 +483,29 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 		if (size == 0)
 			return;
 		final int[] keyTable = this.keyTable;
-		final V[] valueTable = this.valueTable;
 		final int[] ib = this.ib;
 		for (int i = ib.length; i > 0; ) {
 			keyTable[--i] = 0;
-			valueTable[i] = null;
 			ib[i] = 0;
 		}
 		size = 0;
-		zeroValue = null;
 		hasZeroValue = false;
 	}
+
 
 	/**
 	 * Returns true if the specified value is in the map. Note this traverses the entire map and compares every value, which may
 	 * be an expensive operation.
-	 *
-	 * @param identity If true, uses == to compare the specified value with values in the map. If false, uses
-	 *                 {@link #equals(Object)}.
 	 */
-	public boolean containsValue (Object value, boolean identity) {
-		final V[] valueTable = this.valueTable;
-		if (value == null) {
-			if (hasZeroValue && zeroValue == null)
+	public boolean containsValue (int value) {
+		if(hasZeroValue && zeroValue == value)
+			return true;
+		final int[] keyTable = this.keyTable;
+		final float[] valueTable = this.valueTable;
+		for (int i = valueTable.length; i-- > 0; )
+			if (keyTable[i] != 0 && valueTable[i] == value)
 				return true;
-			int[] keyTable = this.keyTable;
-			for (int i = valueTable.length; i-- > 0; )
-				if (keyTable[i] != 0 && valueTable[i] == null)
-					return true;
-		} else if (identity) {
-			if (value == zeroValue)
-				return true;
-			for (int i = valueTable.length; i-- > 0; )
-				if (valueTable[i] == value)
-					return true;
-		} else {
-			if (hasZeroValue && value.equals(zeroValue))
-				return true;
-			for (int i = valueTable.length; i-- > 0; )
-				if (value.equals(valueTable[i]))
-					return true;
-		}
 		return false;
-
 	}
 
 	public boolean containsKey (int key) {
@@ -546,37 +515,21 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 	}
 
 	/**
-	 * Returns the key for the specified value, or <tt>notFound</tt> if it is not in the map. Note this traverses the entire map
-	 * and compares every value, which may be an expensive operation.
-	 *
-	 * @param identity If true, uses == to compare the specified value with values in the map. If false, uses
-	 *                 {@link #equals(Object)}.
+	 * Returns the key for the specified value, or null if it is not in the map. Note this traverses the entire map and compares
+	 * every value, which may be an expensive operation.
 	 */
-	public int findKey (Object value, boolean identity, int notFound) {
-		final V[] valueTable = this.valueTable;
-		if (value == null) {
-			if (hasZeroValue && zeroValue == null)
-				return 0;
-			int[] keyTable = this.keyTable;
-			for (int i = valueTable.length; i-- > 0; )
-				if (keyTable[i] != 0 && valueTable[i] == null)
-					return keyTable[i];
-		} else if (identity) {
-			if (value == zeroValue)
-				return 0;
-			for (int i = valueTable.length; i-- > 0; )
-				if (valueTable[i] == value)
-					return keyTable[i];
-		} else {
-			if (hasZeroValue && value.equals(zeroValue))
-				return 0;
-			for (int i = valueTable.length; i-- > 0; )
-				if (value.equals(valueTable[i]))
-					return keyTable[i];
+	public int findKey (int value, int notFound) {
+		if(hasZeroValue && zeroValue == value) return 0;
+		final int[] keyTable = this.keyTable;
+		final float[] valueTable = this.valueTable;
+		for (int i = valueTable.length; i-- > 0; ) {
+			int key = keyTable[i];
+			if (key != 0 && valueTable[i] == value)
+				return key;
 		}
 		return notFound;
 	}
-
+	
 	/**
 	 * Increases the size of the backing array to accommodate the specified number of additional items. Useful before adding many
 	 * items to avoid multiple backing array resizes.
@@ -596,10 +549,10 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 		shift = Long.numberOfLeadingZeros(mask);
 
 		final int[] oldKeyTable = keyTable;
-		final V[] oldValueTable = valueTable;
+		final float[] oldValueTable = valueTable;
 
 		keyTable = new int[newSize];
-		valueTable = (V[])new Object[newSize];
+		valueTable = new float[newSize];
 		ib = new int[newSize];
 
 		int oldSize = size;
@@ -615,20 +568,16 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 
 	public int hashCode () {
 		int h = 0;
-		if (hasZeroValue && zeroValue != null) {
-			h += zeroValue.hashCode();
+		if (hasZeroValue) {
+			h += NumberUtils.floatToRawIntBits(zeroValue);
 		}
 		int[] keyTable = this.keyTable;
-		V[] valueTable = this.valueTable;
+		float[] valueTable = this.valueTable;
 		for (int i = 0, n = keyTable.length; i < n; i++) {
 			int key = keyTable[i];
 			if (key != 0) {
 				h ^= key;
-
-				V value = valueTable[i];
-				if (value != null) {
-					h += value.hashCode();
-				}
+				h += NumberUtils.floatToRawIntBits(valueTable[i]);
 			}
 		}
 		return h;
@@ -637,61 +586,28 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 	public boolean equals (Object obj) {
 		if (obj == this)
 			return true;
-		if (!(obj instanceof MerryIntMap))
+		if (!(obj instanceof IntFloatMap))
 			return false;
-		MerryIntMap other = (MerryIntMap)obj;
+		IntFloatMap other = (IntFloatMap)obj;
 		if (other.size != size)
 			return false;
 		if (other.hasZeroValue != hasZeroValue)
 			return false;
 		if (hasZeroValue) {
-			if (other.zeroValue == null) {
-				if (zeroValue != null)
-					return false;
-			} else {
-				if (!other.zeroValue.equals(zeroValue))
-					return false;
-			}
+			if (other.zeroValue != zeroValue)
+				return false;
 		}
 		final int[] keyTable = this.keyTable;
-		final V[] valueTable = this.valueTable;
+		final float[] valueTable = this.valueTable;
 		for (int i = 0, n = keyTable.length; i < n; i++) {
 			int key = keyTable[i];
 			if (key != 0) {
-				V value = valueTable[i];
-				if (value == null) {
-					if (other.get(key, MerryObjectMap.dummy) != null)
-						return false;
-				} else {
-					if (!value.equals(other.get(key)))
-						return false;
-				}
+				float otherValue = other.get(key, 0f);
+				if (otherValue == 0f && !other.containsKey(key))
+					return false;
+				if (otherValue != valueTable[i])
+					return false;
 			}
-		}
-		return true;
-	}
-
-	/**
-	 * Uses == for comparison of each value.
-	 */
-	public boolean equalsIdentity (Object obj) {
-		if (obj == this)
-			return true;
-		if (!(obj instanceof MerryIntMap))
-			return false;
-		MerryIntMap other = (MerryIntMap)obj;
-		if (other.size != size)
-			return false;
-		if (other.hasZeroValue != hasZeroValue)
-			return false;
-		if (hasZeroValue && zeroValue != other.zeroValue)
-			return false;
-		final int[] keyTable = this.keyTable;
-		final V[] valueTable = this.valueTable;
-		for (int i = 0, n = keyTable.length; i < n; i++) {
-			int key = keyTable[i];
-			if (key != 0 && valueTable[i] != other.get(key, MerryObjectMap.dummy))
-				return false;
 		}
 		return true;
 	}
@@ -702,7 +618,7 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 		StringBuilder buffer = new StringBuilder(32);
 		buffer.append('[');
 		final int[] keyTable = this.keyTable;
-		final V[] valueTable = this.valueTable;
+		final float[] valueTable = this.valueTable;
 		int i = keyTable.length;
 		if (hasZeroValue) {
 			buffer.append("0=");
@@ -731,7 +647,7 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 		return buffer.toString();
 	}
 
-	public Iterator<Entry<V>> iterator () {
+	public Iterator<Entry> iterator () {
 		return entries();
 	}
 
@@ -766,7 +682,7 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 	 * If {@link Collections#allocateIterators} is false, the same iterator instance is returned each time this method is called.
 	 * Use the {@link Entries} constructor for nested or multithreaded iteration.
 	 */
-	public Values<V> values () {
+	public Values values () {
 		if (Collections.allocateIterators)
 			return new Values(this);
 		if (values1 == null) {
@@ -810,9 +726,9 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 		return keys2;
 	}
 
-	static public class Entry<V> {
+	static public class Entry {
 		public int key;
-		public V value;
+		public float value;
 
 		public String toString () {
 			return key + "=" + value;
@@ -825,11 +741,11 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 
 		public boolean hasNext;
 
-		final MerryIntMap<V> map;
+		final IntFloatMap<V> map;
 		int nextIndex, currentIndex;
 		boolean valid = true;
 
-		public MapIterator (MerryIntMap<V> map) {
+		public MapIterator (IntFloatMap<V> map) {
 			this.map = map;
 			reset();
 		}
@@ -856,23 +772,20 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 
 		public void remove () {
 			if (currentIndex == INDEX_ZERO && map.hasZeroValue) {
-				map.zeroValue = null;
 				map.hasZeroValue = false;
 			} else if (currentIndex < 0) {
 				throw new IllegalStateException("next must be called before remove.");
 			} else {
 				int[] keyTable = map.keyTable;
-				V[] valueTable = map.valueTable;
+				float[] valueTable = map.valueTable;
 				int[] ib = map.ib;
 				int mask = map.mask;
 				keyTable[currentIndex] = 0;
-				valueTable[currentIndex] = null;
 				for (int i = (currentIndex + 1) & mask; (keyTable[i] != 0 && (i - ib[i] & mask) != 0); i = (i + 1) & mask) {
 					keyTable[i - 1 & mask] = keyTable[i];
 					valueTable[i - 1 & mask] = valueTable[i];
 					ib[i - 1 & mask] = ib[i];
 					keyTable[i] = 0;
-					valueTable[i] = null;
 					ib[i] = 0;
 				}
 
@@ -882,21 +795,21 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 		}
 	}
 
-	static public class Entries<V> extends MapIterator<V> implements Iterable<Entry<V>>, Iterator<Entry<V>> {
-		private Entry<V> entry = new Entry();
+	static public class Entries<V> extends MapIterator<V> implements Iterable<Entry>, Iterator<Entry> {
+		private Entry entry = new Entry();
 
-		public Entries (MerryIntMap map) {
+		public Entries (IntFloatMap map) {
 			super(map);
 		}
 
 		/**
 		 * Note the same entry instance is returned each time this method is called.
 		 */
-		public Entry<V> next () {
+		public Entry next () {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
-				throw new GdxRuntimeException("#iterator() cannot be used nested.");
+				throw new MerryRuntimeException("#iterator() cannot be used nested.");
 			int[] keyTable = map.keyTable;
 			if (nextIndex == INDEX_ZERO) {
 				entry.key = 0;
@@ -912,11 +825,11 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 
 		public boolean hasNext () {
 			if (!valid)
-				throw new GdxRuntimeException("#iterator() cannot be used nested.");
+				throw new MerryRuntimeException("#iterator() cannot be used nested.");
 			return hasNext;
 		}
 
-		public Iterator<Entry<V>> iterator () {
+		public Iterator<Entry> iterator () {
 			return this;
 		}
 
@@ -925,53 +838,54 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 		}
 	}
 
-	static public class Values<V> extends MapIterator<V> implements Iterable<V>, Iterator<V> {
-		public Values (MerryIntMap<V> map) {
+	static public class Values extends MapIterator<Object> {
+		public Values (IntFloatMap map) {
 			super(map);
 		}
 
 		public boolean hasNext () {
 			if (!valid)
-				throw new GdxRuntimeException("#iterator() cannot be used nested.");
+				throw new MerryRuntimeException("#iterator() cannot be used nested.");
 			return hasNext;
 		}
 
-		public V next () {
+		public float next () {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
-				throw new GdxRuntimeException("#iterator() cannot be used nested.");
-			V value;
-			if (nextIndex == INDEX_ZERO)
-				value = map.zeroValue;
-			else
-				value = map.valueTable[nextIndex];
+				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+			float value = map.valueTable[nextIndex];
 			currentIndex = nextIndex;
 			findNextIndex();
 			return value;
 		}
 
-		public Iterator<V> iterator () {
+		public Values iterator () {
 			return this;
 		}
 
 		/**
 		 * Returns a new array containing the remaining values.
 		 */
-		public Array<V> toArray () {
-			Array array = new Array(true, map.size);
+		public FloatArray toArray () {
+			FloatArray array = new FloatArray(true, map.size);
 			while (hasNext)
 				array.add(next());
 			return array;
 		}
 
-		public void remove () {
-			super.remove();
+		/**
+		 * Adds the remaining values to the specified array.
+		 */
+		public FloatArray toArray (FloatArray array) {
+			while (hasNext)
+				array.add(next());
+			return array;
 		}
 	}
 
 	static public class Keys extends MapIterator {
-		public Keys (MerryIntMap map) {
+		public Keys (IntFloatMap map) {
 			super(map);
 		}
 
@@ -979,7 +893,7 @@ public class MerryIntMap<V> implements Iterable<MerryIntMap.Entry<V>> {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
-				throw new GdxRuntimeException("#iterator() cannot be used nested.");
+				throw new MerryRuntimeException("#iterator() cannot be used nested.");
 			int key = nextIndex == INDEX_ZERO ? 0 : map.keyTable[nextIndex];
 			currentIndex = nextIndex;
 			findNextIndex();

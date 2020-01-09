@@ -14,11 +14,12 @@ apply plugin: 'java-library'
 apply plugin: 'com.bmuschko.nexus'
 apply plugin: 'io.codearte.nexus-staging'
 apply from: 'publish.gradle'
+apply plugin: 'idea'
 
 sourceCompatibility = 1.7
 
 def projectName = 'merry'
-version '0.2.0'
+version '0.1.0-SNAPSHOT'
 group 'com.github.tommyettinger'
 
 def gdxVersion = '1.9.10'
@@ -36,6 +37,8 @@ if (JavaVersion.current().isJava8Compatible()) {
         }
     }
 }
+idea.module.excludeDirs += [file('src/main/java/super')]
+sourceSets.main.java.exclude 'super/**'
 
 sourceSets.test.resources.srcDirs += [ file('src/test/resources').path ]
 

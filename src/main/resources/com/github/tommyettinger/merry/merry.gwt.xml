@@ -7,6 +7,8 @@
      <inherits name="com.github.tommyettinger.merry.merry" />
   -->
 <module>
+    <inherits name="com.google.gwt.typedarrays.TypedArrays"/>
+    <super-source path="super" />
     <source path=""/>
     <inherits name="com.badlogic.gdx.backends.gdx_backends_gwt" />
 </module>
