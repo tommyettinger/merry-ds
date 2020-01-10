@@ -274,9 +274,6 @@ public class IntIntMap<V> implements Iterable<IntIntMap.Entry> {
 			valueTable[loc] = value;
 			return;
 		}
-		if (++size >= threshold) {
-			resize(ib.length << 1);
-		}
 		final int[] keyTable = this.keyTable;
 		final int[] valueTable = this.valueTable;
 		final int[] ib = this.ib;
@@ -287,6 +284,10 @@ public class IntIntMap<V> implements Iterable<IntIntMap.Entry> {
 				keyTable[i] = key;
 				valueTable[i] = value;
 				ib[i] = b;
+
+				if (++size >= threshold) {
+					resize(ib.length << 1);
+				}
 				return;
 			}
 			// if there is a key with a lower probe distance, we swap with it
@@ -335,9 +336,6 @@ public class IntIntMap<V> implements Iterable<IntIntMap.Entry> {
 			}
 			return;
 		}
-		if (++size >= threshold) {
-			resize(ib.length << 1);
-		}
 		final int[] keyTable = this.keyTable;
 		final int[] valueTable = this.valueTable;
 		final int[] ib = this.ib;
@@ -348,6 +346,10 @@ public class IntIntMap<V> implements Iterable<IntIntMap.Entry> {
 				keyTable[i] = key;
 				valueTable[i] = value;
 				ib[i] = b;
+
+				if (++size >= threshold) {
+					resize(ib.length << 1);
+				}
 				return;
 			}
 			// if there is a key with a lower probe distance, we swap with it

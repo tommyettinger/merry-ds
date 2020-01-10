@@ -275,9 +275,6 @@ public class IntFloatMap<V> implements Iterable<IntFloatMap.Entry> {
 			valueTable[loc] = value;
 			return;
 		}
-		if (++size >= threshold) {
-			resize(ib.length << 1);
-		}
 		final int[] keyTable = this.keyTable;
 		final float[] valueTable = this.valueTable;
 		final int[] ib = this.ib;
@@ -288,6 +285,10 @@ public class IntFloatMap<V> implements Iterable<IntFloatMap.Entry> {
 				keyTable[i] = key;
 				valueTable[i] = value;
 				ib[i] = b;
+
+				if (++size >= threshold) {
+					resize(ib.length << 1);
+				}
 				return;
 			}
 			// if there is a key with a lower probe distance, we swap with it
@@ -336,9 +337,6 @@ public class IntFloatMap<V> implements Iterable<IntFloatMap.Entry> {
 			}
 			return;
 		}
-		if (++size >= threshold) {
-			resize(ib.length << 1);
-		}
 		final int[] keyTable = this.keyTable;
 		final float[] valueTable = this.valueTable;
 		final int[] ib = this.ib;
@@ -349,6 +347,9 @@ public class IntFloatMap<V> implements Iterable<IntFloatMap.Entry> {
 				keyTable[i] = key;
 				valueTable[i] = value;
 				ib[i] = b;
+				if (++size >= threshold) {
+					resize(ib.length << 1);
+				}
 				return;
 			}
 			// if there is a key with a lower probe distance, we swap with it
@@ -408,7 +409,7 @@ public class IntFloatMap<V> implements Iterable<IntFloatMap.Entry> {
 		return oldValue;
 	}
 
-	public float remove (int key, int defaultValue) {
+	public float remove (int key, float defaultValue) {
 		if (key == 0) {
 			if (!hasZeroValue)
 				return defaultValue;
@@ -788,7 +789,6 @@ public class IntFloatMap<V> implements Iterable<IntFloatMap.Entry> {
 					keyTable[i] = 0;
 					ib[i] = 0;
 				}
-
 			}
 			currentIndex = INDEX_ILLEGAL;
 			map.size--;

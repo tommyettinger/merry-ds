@@ -300,6 +300,7 @@ public class OrderedMap<K, V> extends ObjectMap<K, V> {
 		}
 
 		public void reset () {
+			currentIndex = -1;
 			nextIndex = 0;
 			hasNext = map.size > 0;
 		}
@@ -309,6 +310,7 @@ public class OrderedMap<K, V> extends ObjectMap<K, V> {
 				throw new NoSuchElementException();
 			if (!valid)
 				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+			currentIndex = nextIndex;
 			entry.key = keys.get(nextIndex);
 			entry.value = map.get(entry.key);
 			nextIndex++;
@@ -321,6 +323,7 @@ public class OrderedMap<K, V> extends ObjectMap<K, V> {
 				throw new IllegalStateException("next must be called before remove.");
 			map.remove(entry.key);
 			nextIndex--;
+			currentIndex = -1;
 		}
 	}
 
@@ -333,6 +336,7 @@ public class OrderedMap<K, V> extends ObjectMap<K, V> {
 		}
 
 		public void reset () {
+			currentIndex = -1;
 			nextIndex = 0;
 			hasNext = map.size > 0;
 		}
@@ -352,7 +356,7 @@ public class OrderedMap<K, V> extends ObjectMap<K, V> {
 		public void remove () {
 			if (currentIndex < 0)
 				throw new IllegalStateException("next must be called before remove.");
-			((OrderedMap)map).removeIndex(nextIndex - 1);
+			((OrderedMap)map).removeIndex(currentIndex);
 			nextIndex = currentIndex;
 			currentIndex = -1;
 		}
@@ -378,6 +382,7 @@ public class OrderedMap<K, V> extends ObjectMap<K, V> {
 		}
 
 		public void reset () {
+			currentIndex = -1;
 			nextIndex = 0;
 			hasNext = map.size > 0;
 		}
