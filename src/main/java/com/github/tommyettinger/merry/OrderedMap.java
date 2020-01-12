@@ -18,6 +18,7 @@ package com.github.tommyettinger.merry;
 
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Collections;
+import com.badlogic.gdx.utils.GdxRuntimeException;
 
 import java.util.NoSuchElementException;
 
@@ -309,7 +310,7 @@ public class OrderedMap<K, V> extends ObjectMap<K, V> {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			currentIndex = nextIndex;
 			entry.key = keys.get(nextIndex);
 			entry.value = map.get(entry.key);
@@ -345,7 +346,7 @@ public class OrderedMap<K, V> extends ObjectMap<K, V> {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			K key = keys.get(nextIndex);
 			currentIndex = nextIndex;
 			nextIndex++;
@@ -391,7 +392,7 @@ public class OrderedMap<K, V> extends ObjectMap<K, V> {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			V value = map.get(keys.get(nextIndex));
 			currentIndex = nextIndex;
 			nextIndex++;

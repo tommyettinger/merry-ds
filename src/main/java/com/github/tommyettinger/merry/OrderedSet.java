@@ -18,6 +18,7 @@ package com.github.tommyettinger.merry;
 
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Collections;
+import com.badlogic.gdx.utils.GdxRuntimeException;
 
 import java.util.NoSuchElementException;
 
@@ -234,7 +235,7 @@ public class OrderedSet<T> extends ObjectSet<T> {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			K key = items.get(nextIndex);
 			nextIndex++;
 			hasNext = nextIndex < set.size;

@@ -20,6 +20,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Collections;
 import com.badlogic.gdx.utils.IntArray;
+import com.badlogic.gdx.utils.GdxRuntimeException;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -625,7 +626,6 @@ public class IntMap<V> implements Iterable<IntMap.Entry<V>> {
 			int key = keyTable[i];
 			if (key != 0) {
 				h ^= key;
-
 				V value = valueTable[i];
 				if (value != null) {
 					h += value.hashCode();
@@ -897,7 +897,7 @@ public class IntMap<V> implements Iterable<IntMap.Entry<V>> {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			int[] keyTable = map.keyTable;
 			if (nextIndex == INDEX_ZERO) {
 				entry.key = 0;
@@ -913,7 +913,7 @@ public class IntMap<V> implements Iterable<IntMap.Entry<V>> {
 
 		public boolean hasNext () {
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			return hasNext;
 		}
 
@@ -933,7 +933,7 @@ public class IntMap<V> implements Iterable<IntMap.Entry<V>> {
 
 		public boolean hasNext () {
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			return hasNext;
 		}
 
@@ -941,7 +941,7 @@ public class IntMap<V> implements Iterable<IntMap.Entry<V>> {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			V value;
 			if (nextIndex == INDEX_ZERO)
 				value = map.zeroValue;
@@ -980,7 +980,7 @@ public class IntMap<V> implements Iterable<IntMap.Entry<V>> {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			int key = nextIndex == INDEX_ZERO ? 0 : map.keyTable[nextIndex];
 			currentIndex = nextIndex;
 			findNextIndex();

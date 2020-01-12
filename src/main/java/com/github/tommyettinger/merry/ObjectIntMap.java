@@ -19,6 +19,8 @@ package com.github.tommyettinger.merry;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.IntArray;
+import com.badlogic.gdx.utils.GdxRuntimeException;
+
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -507,11 +509,8 @@ public class ObjectIntMap<K> implements Iterable<ObjectIntMap.Entry<K>> {
 		for (int i = 0, n = keyTable.length; i < n; i++) {
 			K key = keyTable[i];
 			if (key != null) {
-				h += key.hashCode() * 31;
-
-				int value = NumberUtils.floatToRawIntBits(valueTable[i]);
-				// the upper bits change more reliably than lower ones in value; xorshift to improve lower bits
-				h += value ^ value >>> 16 ^ value >>> 21;
+				h ^= key.hashCode();
+				h += valueTable[i];
 			}
 		}
 		return h;
@@ -719,7 +718,7 @@ public class ObjectIntMap<K> implements Iterable<ObjectIntMap.Entry<K>> {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			K[] keyTable = map.keyTable;
 			entry.key = keyTable[nextIndex];
 			entry.value = map.valueTable[nextIndex];
@@ -730,7 +729,7 @@ public class ObjectIntMap<K> implements Iterable<ObjectIntMap.Entry<K>> {
 
 		public boolean hasNext () {
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			return hasNext;
 		}
 
@@ -746,7 +745,7 @@ public class ObjectIntMap<K> implements Iterable<ObjectIntMap.Entry<K>> {
 
 		public boolean hasNext () {
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			return hasNext;
 		}
 
@@ -754,7 +753,7 @@ public class ObjectIntMap<K> implements Iterable<ObjectIntMap.Entry<K>> {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			int value = map.valueTable[nextIndex];
 			currentIndex = nextIndex;
 			findNextIndex();
@@ -792,7 +791,7 @@ public class ObjectIntMap<K> implements Iterable<ObjectIntMap.Entry<K>> {
 
 		public boolean hasNext () {
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			return hasNext;
 		}
 
@@ -800,7 +799,7 @@ public class ObjectIntMap<K> implements Iterable<ObjectIntMap.Entry<K>> {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			K key = map.keyTable[nextIndex];
 			currentIndex = nextIndex;
 			findNextIndex();

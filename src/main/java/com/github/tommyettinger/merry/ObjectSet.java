@@ -19,6 +19,7 @@ package com.github.tommyettinger.merry;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Collections;
+import com.badlogic.gdx.utils.GdxRuntimeException;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -600,7 +601,7 @@ public class ObjectSet<T> implements Iterable<T> {
 
 		public boolean hasNext () {
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			return hasNext;
 		}
 
@@ -608,7 +609,7 @@ public class ObjectSet<T> implements Iterable<T> {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			K key = set.keyTable[nextIndex];
 			currentIndex = nextIndex;
 			findNextIndex();

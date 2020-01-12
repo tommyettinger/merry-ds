@@ -14,7 +14,6 @@ apply plugin: 'java-library'
 apply plugin: 'com.bmuschko.nexus'
 apply plugin: 'io.codearte.nexus-staging'
 apply from: 'publish.gradle'
-apply plugin: 'idea'
 
 sourceCompatibility = 1.7
 
@@ -37,8 +36,6 @@ if (JavaVersion.current().isJava8Compatible()) {
         }
     }
 }
-idea.module.excludeDirs += [file('src/main/java/super')]
-sourceSets.main.java.exclude 'super/**'
 
 sourceSets.test.resources.srcDirs += [ file('src/test/resources').path ]
 

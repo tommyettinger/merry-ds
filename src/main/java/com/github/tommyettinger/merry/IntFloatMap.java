@@ -20,6 +20,8 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Collections;
 import com.badlogic.gdx.utils.FloatArray;
 import com.badlogic.gdx.utils.IntArray;
+import com.badlogic.gdx.utils.NumberUtils;
+import com.badlogic.gdx.utils.GdxRuntimeException;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -578,7 +580,8 @@ public class IntFloatMap<V> implements Iterable<IntFloatMap.Entry> {
 			int key = keyTable[i];
 			if (key != 0) {
 				h ^= key;
-				h += NumberUtils.floatToRawIntBits(valueTable[i]);
+				key = NumberUtils.floatToRawIntBits(valueTable[i]);
+				h += key ^ key >>> 16 ^ key >>> 21;
 			}
 		}
 		return h;
@@ -809,7 +812,7 @@ public class IntFloatMap<V> implements Iterable<IntFloatMap.Entry> {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			int[] keyTable = map.keyTable;
 			if (nextIndex == INDEX_ZERO) {
 				entry.key = 0;
@@ -825,7 +828,7 @@ public class IntFloatMap<V> implements Iterable<IntFloatMap.Entry> {
 
 		public boolean hasNext () {
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			return hasNext;
 		}
 
@@ -845,7 +848,7 @@ public class IntFloatMap<V> implements Iterable<IntFloatMap.Entry> {
 
 		public boolean hasNext () {
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			return hasNext;
 		}
 
@@ -853,7 +856,7 @@ public class IntFloatMap<V> implements Iterable<IntFloatMap.Entry> {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			float value = map.valueTable[nextIndex];
 			currentIndex = nextIndex;
 			findNextIndex();
@@ -893,7 +896,7 @@ public class IntFloatMap<V> implements Iterable<IntFloatMap.Entry> {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			int key = nextIndex == INDEX_ZERO ? 0 : map.keyTable[nextIndex];
 			currentIndex = nextIndex;
 			findNextIndex();

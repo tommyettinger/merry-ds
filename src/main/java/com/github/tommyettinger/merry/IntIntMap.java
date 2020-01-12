@@ -19,6 +19,7 @@ package com.github.tommyettinger.merry;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Collections;
 import com.badlogic.gdx.utils.IntArray;
+import com.badlogic.gdx.utils.GdxRuntimeException;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -810,7 +811,7 @@ public class IntIntMap<V> implements Iterable<IntIntMap.Entry> {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			int[] keyTable = map.keyTable;
 			if (nextIndex == INDEX_ZERO) {
 				entry.key = 0;
@@ -826,7 +827,7 @@ public class IntIntMap<V> implements Iterable<IntIntMap.Entry> {
 
 		public boolean hasNext () {
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			return hasNext;
 		}
 
@@ -846,7 +847,7 @@ public class IntIntMap<V> implements Iterable<IntIntMap.Entry> {
 
 		public boolean hasNext () {
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			return hasNext;
 		}
 
@@ -854,7 +855,7 @@ public class IntIntMap<V> implements Iterable<IntIntMap.Entry> {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			int value = map.valueTable[nextIndex];
 			currentIndex = nextIndex;
 			findNextIndex();
@@ -894,7 +895,7 @@ public class IntIntMap<V> implements Iterable<IntIntMap.Entry> {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
-				throw new MerryRuntimeException("#iterator() cannot be used nested.");
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			int key = nextIndex == INDEX_ZERO ? 0 : map.keyTable[nextIndex];
 			currentIndex = nextIndex;
 			findNextIndex();
