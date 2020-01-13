@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2011 See AUTHORS file.
- *
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,17 +17,15 @@
 package com.github.tommyettinger.merry;
 
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Collections;
 import com.badlogic.gdx.utils.GdxRuntimeException;
+import com.badlogic.gdx.utils.IntArray;
 
-import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-/**
- * An unordered set where the keys are objects. This implementation uses Robin Hood Hashing with the backward-shift
+/** An unordered set that uses int keys. This implementation uses Robin Hood Hashing with the backward-shift
  * algorithm for removal, and finds space for keys using Fibonacci hashing instead of the more-common power-of-two mask.
- * Null keys are not allowed. No allocation is done except when growing the table size.
+ * No allocation is done except when growing the table size.
  * <br>
  * See <a href="https://codecapsule.com/2013/11/11/robin-hood-hashing/">Emmanuel Goossaert's blog post</a> for more
  * information on Robin Hood hashing. It isn't state-of-the art in C++ or Rust any more, but newer techniques like Swiss
@@ -98,61 +96,33 @@ import java.util.NoSuchElementException;
  * @author Tommy Ettinger
  * @author Nathan Sweet
  */
-public class ObjectSet<T> implements Iterable<T> {
+public class IntSet {
 	public int size;
 
-	T[] keyTable;
-	/**
-	 * Initial Bucket positions.
-	 */
-	int[] ib;
+	private int[] keyTable;
+	private int[] ib;
+	boolean hasZeroValue;
 
-	float loadFactor;
-	int threshold;
-	/**
-	 * Used by {@link #place(Object)} to bit-shift the upper bits of a {@code long} into a usable range (less than or
-	 * equal to {@link #mask}, greater than or equal to 0). If you're setting it in a subclass, this shift can be
-	 * negative, which is a convenient way to match the number of bits in mask; if mask is a 7-bit number, then a shift
-	 * of -7 will correctly shift the upper 7 bits into the lowest 7 positions. If using what this class sets, shift
-	 * will be greater than 32 and less than 64; if you use this shift with an int, it will still correctly move the
-	 * upper bits of an int to the lower bits, thanks to Java's implicit modulus on shifts.
-	 * <br>
-	 * You can also use {@link #mask} to mask the low bits of a number, which may be faster for some hashCode()s, if you
-	 * reimplement {@link #place(Object)}.
-	 */
-	protected int shift;
-	/**
-	 * The bitmask used to contain hashCode()s to the indices that can be fit into the key array this uses. This should
-	 * always be all-1-bits in its low positions; that is, it must be a power of two minus 1. If you subclass and change
-	 * {@link #place(Object)}, you may want to use this instead of {@link #shift} to isolate usable bits of a hash.
-	 */
-	protected int mask;
+	private float loadFactor;
+	private int shift, mask, threshold;
 
-	private MerryObjectSetIterator iterator1, iterator2;
+	private IntSetIterator iterator1, iterator2;
 
-	/**
-	 * Creates a new set with an initial capacity of 51 and a load factor of 0.8.
-	 */
-	public ObjectSet () {
+	/** Creates a new set with an initial capacity of 51 and a load factor of 0.8. */
+	public IntSet () {
 		this(51, 0.8f);
 	}
 
-	/**
-	 * Creates a new set with a load factor of 0.8.
-	 *
-	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two.
-	 */
-	public ObjectSet (int initialCapacity) {
+	/** Creates a new set with a load factor of 0.8.
+	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two. */
+	public IntSet (int initialCapacity) {
 		this(initialCapacity, 0.8f);
 	}
 
-	/**
-	 * Creates a new set with the specified initial capacity and load factor. This set will hold initialCapacity items before
+	/** Creates a new set with the specified initial capacity and load factor. This set will hold initialCapacity items before
 	 * growing the backing table.
-	 *
-	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two.
-	 */
-	public ObjectSet (int initialCapacity, float loadFactor) {
+	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two. */
+	public IntSet (int initialCapacity, float loadFactor) {
 		if (initialCapacity < 0)
 			throw new IllegalArgumentException("initialCapacity must be >= 0: " + initialCapacity);
 		if (loadFactor <= 0f || loadFactor >= 1f)
@@ -166,68 +136,35 @@ public class ObjectSet<T> implements Iterable<T> {
 		threshold = (int)(initialCapacity * loadFactor);
 		mask = initialCapacity - 1;
 		shift = Long.numberOfLeadingZeros(mask);
-		keyTable = (T[])(new Object[initialCapacity]);
+
+		keyTable = new int[initialCapacity];
 		ib = new int[initialCapacity];
 	}
 
-	/**
-	 * Creates a new set identical to the specified set.
-	 */
-	public ObjectSet (ObjectSet<? extends T> set) {
-		this((int)Math.ceil(set.ib.length * set.loadFactor), set.loadFactor);
+	/** Creates a new set identical to the specified set. */
+	public IntSet (IntSet set) {
+		this((int)(set.ib.length * set.loadFactor), set.loadFactor);
 		System.arraycopy(set.keyTable, 0, keyTable, 0, set.keyTable.length);
 		System.arraycopy(set.ib, 0, ib, 0, set.ib.length);
 		size = set.size;
+		hasZeroValue = set.hasZeroValue;
 	}
-
-	/**
-	 * Finds an array index between 0 and {@link #mask}, both inclusive, corresponding to the hash code of {@code item}.
-	 * By default, this uses "Fibonacci Hashing" on the {@link Object#hashCode()} of {@code item}; this multiplies
-	 * {@code item.hashCode()} by a long constant (2 to the 64, divided by the golden ratio) and shifts the high-quality
-	 * uppermost bits into the lowest positions so they can be used as array indices. The multiplication by a long may
-	 * be somewhat slow on GWT, but it will be correct across all platforms and won't lose precision. Using Fibonacci
-	 * Hashing allows even very poor hashCode() implementations, such as those that only differ in their upper bits, to
-	 * work in a hash table without heavy collision rates. It has known problems when all or most hashCode()s are
-	 * multiples of larger Fibonacci numbers; see <a href="https://probablydance.com/2018/06/16/fibonacci-hashing-the-optimization-that-the-world-forgot-or-a-better-alternative-to-integer-modulo/">this blog post by Malte Skarupke</a>
-	 * for more details. In the unlikely event that most of your hashCode()s are Fibonacci numbers, you can subclass
-	 * this to change this method, which is a one-liner in this form:
-	 * {@code return (int) (item.hashCode() * 0x9E3779B97F4A7C15L >>> shift);}
-	 * <br>
-	 * This can be overridden by subclasses, which you may want to do if your key type needs special consideration for
-	 * its hash (such as if you use arrays as keys, which still requires that the arrays are not modified). Subclasses
-	 * that don't need the collision decrease of Fibonacci Hashing (assuming the key class has a good hashCode()) may do
-	 * fine with a simple implementation:
-	 * {@code return (item.hashCode() & mask);}
-	 *
-	 * @param item a key that this method will hash, by default by calling {@link Object#hashCode()} on it; non-null
-	 * @return an int between 0 and {@link #mask}, both inclusive
-	 */
-	protected int place (final T item) {
+	private int place (final int item) {
 		// shift is always greater than 32, less than 64
-		return (int)(item.hashCode() * 0x9E3779B97F4A7C15L >>> shift);
+		return (int)(item * 0x9E3779B97F4A7C15L >>> shift);
 	}
 
-	private int locateKey (final T key) {
-
+	private int locateKey (final int key) {
 		return locateKey(key, place(key));
 	}
 
-	/**
-	 * Given a key and its initial placement to try in an array, this finds the actual location of the key in the array
-	 * if it is present, or -1 if the key is not present. This can be overridden if a subclass needs to compare for
-	 * equality differently than just by calling {@link Object#equals(Object)}, but only within the same package.
-	 *
-	 * @param key       a K key that will be checked for equality if a similar-seeming key is found
-	 * @param placement as calculated by {@link #place(Object)}, almost always with {@code place(key)}
-	 * @return the location in the key array of key, if found, or -1 if it was not found.
-	 */
-	int locateKey (final T key, final int placement) {
+	private int locateKey (final int key, final int placement) {
 		for (int i = placement; ; i = i + 1 & mask) {
 			// empty space is available
-			if (keyTable[i] == null) {
+			if (keyTable[i] == 0) {
 				return -1;
 			}
-			if (key.equals(keyTable[i])) {
+			if (key == (keyTable[i])) {
 				return i;
 			}
 			// ib holds the initial bucket position before probing offset the item
@@ -239,31 +176,39 @@ public class ObjectSet<T> implements Iterable<T> {
 		}
 	}
 
-	/**
-	 * Returns true if the key was not already in the set. If this set already contains the key, the call leaves the set unchanged
-	 * and returns false.
-	 */
-	public boolean add (T key) {
-		if (key == null)
-			throw new IllegalArgumentException("key cannot be null.");
-		T[] keyTable = this.keyTable;
-		int[] ib = this.ib;
+	/** Returns true if the key was not already in the set. */
+	public boolean add (int key) {
+		if (key == 0) {
+			if (hasZeroValue) return false;
+			hasZeroValue = true;
+			size++;
+			return true;
+		}
+
 		int b = place(key);
+		int loc = locateKey(key, b);
 		// an identical key already exists
-		if (locateKey(key, b) != -1) {
+		if (loc != -1) {
 			return false;
 		}
+		final int[] keyTable = this.keyTable;
+		final int[] ib = this.ib;
+
 		for (int i = b; ; i = (i + 1) & mask) {
-			// space is available so we insert and break (resize is later)
-			if (keyTable[i] == null) {
+			// space is available so we insert and break
+			if (keyTable[i] == 0) {
 				keyTable[i] = key;
 				ib[i] = b;
-				break;
+
+				if (++size >= threshold) {
+					resize(ib.length << 1);
+				}
+				return true;
 			}
 			// if there is a key with a lower probe distance, we swap with it
 			// and keep going until we find a place we can insert
 			else if ((i - ib[i] & mask) < (i - b & mask)) {
-				T temp = keyTable[i];
+				int temp = keyTable[i];
 				int tb = ib[i];
 				keyTable[i] = key;
 				ib[i] = b;
@@ -271,65 +216,71 @@ public class ObjectSet<T> implements Iterable<T> {
 				b = tb;
 			}
 		}
-		if (++size >= threshold) {
-			resize(ib.length << 1);
-		}
-		return true;
 	}
 
-	public void addAll (Array<? extends T> array) {
+	public void addAll (IntArray array) {
 		addAll(array.items, 0, array.size);
 	}
 
-	public void addAll (Array<? extends T> array, int offset, int length) {
+	public void addAll (IntArray array, int offset, int length) {
 		if (offset + length > array.size)
-			throw new IllegalArgumentException(
-				"offset + length must be <= size: " + offset + " + " + length + " <= " + array.size);
-		addAll((T[])array.items, offset, length);
+			throw new IllegalArgumentException("offset + length must be <= size: " + offset + " + " + length + " <= " + array.size);
+		addAll(array.items, offset, length);
 	}
 
-	public boolean addAll (T... array) {
-		return addAll(array, 0, array.length);
+	public void addAll (int... array) {
+		addAll(array, 0, array.length);
 	}
 
-	public boolean addAll (T[] array, int offset, int length) {
+	public void addAll (int[] array, int offset, int length) {
 		ensureCapacity(length);
-		int oldSize = size;
 		for (int i = offset, n = i + length; i < n; i++)
 			add(array[i]);
-		return oldSize != size;
 	}
 
-	public void addAll (ObjectSet<T> set) {
+	public void addAll (IntSet set) {
 		ensureCapacity(set.size);
-		final T[] keyTable = set.keyTable;
-		T t;
+		if (set.hasZeroValue)
+			add(0);
+		final int[] keyTable = set.keyTable;
+		int k;
 		for (int i = 0, n = keyTable.length; i < n; i++) {
-			if ((t = keyTable[i]) != null)
-				add(t);
+			if ((k = keyTable[i]) != 0)
+				add(k);
 		}
-//		for (T key : set)
-//			add(key);
+		
+//		ensureCapacity(set.size);
+//		IntSetIterator iterator = set.iterator();
+//		while (iterator.hasNext)
+//			add(iterator.next());
 	}
 
-	/**
-	 * Skips checks for existing keys.
-	 */
-	private void addResize (T key) {
-		T[] keyTable = this.keyTable;
-		int[] ib = this.ib;
+	/** Skips checks for existing keys. */
+	private void addResize (int key) {
+		if (key == 0) {
+			if(!hasZeroValue && size++ >= threshold) resize(ib.length << 1);
+			hasZeroValue = true;
+			return;
+		}
+
+		final int[] keyTable = this.keyTable;
+		final int[] ib = this.ib;
 		int b = place(key);
 		for (int i = b; ; i = (i + 1) & mask) {
 			// space is available so we insert and break (resize is later)
-			if (keyTable[i] == null) {
+			if (keyTable[i] == 0) {
 				keyTable[i] = key;
 				ib[i] = b;
-				break;
+
+				if (++size >= threshold) {
+					resize(ib.length << 1);
+				}
+				return;
 			}
 			// if there is a key with a lower probe distance, we swap with it
 			// and keep going until we find a place we can insert
 			else if ((i - ib[i] & mask) < (i - b & mask)) {
-				T temp = keyTable[i];
+				int temp = keyTable[i];
 				int tb = ib[i];
 				keyTable[i] = key;
 				ib[i] = b;
@@ -337,118 +288,96 @@ public class ObjectSet<T> implements Iterable<T> {
 				b = tb;
 			}
 		}
-		if (++size >= threshold) {
-			resize(ib.length << 1);
-		}
 	}
 
-	/**
-	 * Returns true if the key was removed.
-	 */
-	public boolean remove (T key) {
+	/** Returns true if the key was removed. */
+	public boolean remove (int key) {
+		if (key == 0) {
+			if (!hasZeroValue) return false;
+			hasZeroValue = false;
+			size--;
+			return true;
+		}
+
 		int loc = locateKey(key);
 		if (loc == -1) {
 			return false;
 		}
-		T[] keyTable = this.keyTable;
-		keyTable[loc] = null;
-		for (int i = (loc + 1) & mask; (keyTable[i] != null && (i - ib[i] & mask) != 0); i = (i + 1) & mask) {
+		final int[] keyTable = this.keyTable;
+		final int[] ib = this.ib;
+		keyTable[loc] = 0;
+		for (int i = (loc + 1) & mask; (keyTable[i] != 0 && (i - ib[i] & mask) != 0); i = (i + 1) & mask) {
 			keyTable[i - 1 & mask] = keyTable[i];
 			ib[i - 1 & mask] = ib[i];
-			keyTable[i] = null;
+			keyTable[i] = 0;
 			ib[i] = 0;
 		}
 		--size;
 		return true;
 	}
 
-	/**
-	 * Returns true if the set has one or more items.
-	 */
+	/** Returns true if the set has one or more items. */
 	public boolean notEmpty () {
 		return size > 0;
 	}
 
-	/**
-	 * Returns true if the set is empty.
-	 */
+	/** Returns true if the set is empty. */
 	public boolean isEmpty () {
 		return size == 0;
 	}
 
-	/**
-	 * Reduces the size of the backing arrays to be the specified capacity or less. If the capacity is already less, nothing is
-	 * done. If the set contains more items than the specified capacity, the next highest power of two capacity is used instead.
-	 */
+	/** Reduces the size of the backing arrays to be the specified capacity or less. If the capacity is already less, nothing is
+	 * done. If the set contains more items than the specified capacity, the next highest power of two capacity is used instead. */
 	public void shrink (int maximumCapacity) {
-		if (maximumCapacity < 0)
-			throw new IllegalArgumentException("maximumCapacity must be >= 0: " + maximumCapacity);
-		if (size > maximumCapacity)
-			maximumCapacity = size;
-		if (ib.length <= maximumCapacity)
-			return;
-		maximumCapacity = MathUtils.nextPowerOfTwo(maximumCapacity);
-		resize(maximumCapacity);
+		if (maximumCapacity < 0) throw new IllegalArgumentException("maximumCapacity must be >= 0: " + maximumCapacity);
+		if (size > maximumCapacity) maximumCapacity = size;
+		if (ib.length <= maximumCapacity) return;
+		resize(MathUtils.nextPowerOfTwo(maximumCapacity));
 	}
 
-	/**
-	 * Clears the set and reduces the size of the backing arrays to be the specified capacity, if they are larger. The reduction
-	 * is done by allocating new arrays, though for large arrays this can be faster than clearing the existing array.
-	 */
+	/** Clears the set and reduces the size of the backing arrays to be the specified capacity if they are larger. */
 	public void clear (int maximumCapacity) {
 		if (ib.length <= maximumCapacity) {
 			clear();
 			return;
 		}
+		hasZeroValue = false;
 		size = 0;
 		resize(maximumCapacity);
 	}
 
-	/**
-	 * Clears the set, leaving the backing arrays at the current capacity. When the capacity is high and the population is low,
-	 * iteration can be unnecessarily slow. {@link #clear(int)} can be used to reduce the capacity.
-	 */
 	public void clear () {
 		if (size == 0)
 			return;
-		T[] keyTable = this.keyTable;
-		for (int i = keyTable.length; i > 0; ) {
-			keyTable[--i] = null;
+		final int[] keyTable = this.keyTable;
+		final int[] ib = this.ib;
+		for (int i = ib.length; i > 0; ) {
+			keyTable[--i] = 0;
 			ib[i] = 0;
 		}
 		size = 0;
+		hasZeroValue = false;
 	}
 
-	public boolean contains (T key) {
+	public boolean contains (int key) {
+		if (key == 0) return hasZeroValue;
 		return locateKey(key) != -1;
 	}
 
-	/**
-	 * @return May be null.
-	 */
-	public T get (T key) {
-		final int loc = locateKey(key);
-		return loc == -1 ? null : keyTable[loc];
+	public int first () {
+		if (hasZeroValue) return 0;
+		int[] keyTable = this.keyTable;
+		for (int i = 0, n = keyTable.length; i < n; i++)
+			if (keyTable[i] != 0) return keyTable[i];
+		throw new IllegalStateException("IntSet is empty.");
 	}
 
-	public T first () {
-		T[] keyTable = this.keyTable;
-		for (int i = 0, n = ib.length; i < n; i++)
-			if (keyTable[i] != null)
-				return keyTable[i];
-		throw new IllegalStateException("ObjectSet is empty.");
-	}
-
-	/**
-	 * Increases the size of the backing array to accommodate the specified number of additional items. Useful before adding many
-	 * items to avoid multiple backing array resizes.
-	 */
+	/** Increases the size of the backing array to accommodate the specified number of additional items. Useful before adding many
+	 * items to avoid multiple backing array resizes. */
 	public void ensureCapacity (int additionalCapacity) {
-		if (additionalCapacity < 0)
-			throw new IllegalArgumentException("additionalCapacity must be >= 0: " + additionalCapacity);
+		if (additionalCapacity < 0) throw new IllegalArgumentException("additionalCapacity must be >= 0: " + additionalCapacity);
 		int sizeNeeded = size + additionalCapacity;
-		if (sizeNeeded >= threshold)
-			resize(MathUtils.nextPowerOfTwo((int)Math.ceil(sizeNeeded / loadFactor)));
+		if (sizeNeeded >= threshold) resize(MathUtils.nextPowerOfTwo((int)Math.ceil(sizeNeeded / loadFactor)));
 	}
 
 	private void resize (int newSize) {
@@ -456,84 +385,79 @@ public class ObjectSet<T> implements Iterable<T> {
 		threshold = (int)(newSize * loadFactor);
 		mask = newSize - 1;
 		shift = Long.numberOfLeadingZeros(mask);
-		T[] oldKeyTable = keyTable;
 
-		keyTable = (T[])(new Object[newSize]);
+		final int[] oldKeyTable = keyTable;
+
+		keyTable = new int[newSize];
 		ib = new int[newSize];
 
 		int oldSize = size;
 		size = 0;
 		if (oldSize > 0) {
 			for (int i = 0; i < oldCapacity; i++) {
-				T key = oldKeyTable[i];
-				if (key != null)
+				int key = oldKeyTable[i];
+				if (key != 0)
 					addResize(key);
 			}
 		}
 	}
-
+	
 	public int hashCode () {
 		int h = size;
-		for (int i = 0, n = ib.length; i < n; i++) {
-			if (keyTable[i] != null) {
-				h += keyTable[i].hashCode();
+		for (int i = 0, n = keyTable.length; i < n; i++) {
+			if (keyTable[i] != 0) {
+				h += keyTable[i];
 			}
 		}
 		return h;
 	}
 
 	public boolean equals (Object obj) {
-		if (!(obj instanceof ObjectSet))
-			return false;
-		ObjectSet other = (ObjectSet)obj;
-		if (other.size != size)
-			return false;
-		T[] keyTable = this.keyTable;
+		if (!(obj instanceof IntSet)) return false;
+		IntSet other = (IntSet)obj;
+		if (other.size != size) return false;
+		if (other.hasZeroValue != hasZeroValue) return false;
+		int[] keyTable = this.keyTable;
 		for (int i = 0, n = keyTable.length; i < n; i++)
-			if (keyTable[i] != null && !other.contains(keyTable[i]))
-				return false;
+			if (keyTable[i] != 0 && !other.contains(keyTable[i])) return false;
 		return true;
 	}
 
 	public String toString () {
-		return '{' + toString(", ") + '}';
-	}
-
-	public String toString (String separator) {
-		if (size == 0)
-			return "";
+		if (size == 0) return "[]";
 		StringBuilder buffer = new StringBuilder(32);
-		T[] keyTable = this.keyTable;
+		buffer.append('[');
+		int[] keyTable = this.keyTable;
 		int i = keyTable.length;
-		while (i-- > 0) {
-			T key = keyTable[i];
-			if (key == null)
-				continue;
-			buffer.append(key == this ? "(this)" : key);
-			break;
+		if (hasZeroValue)
+			buffer.append("0");
+		else {
+			while (i-- > 0) {
+				int key = keyTable[i];
+				if (key == 0) continue;
+				buffer.append(key);
+				break;
+			}
 		}
 		while (i-- > 0) {
-			T key = keyTable[i];
-			if (key == null)
-				continue;
-			buffer.append(separator);
-			buffer.append(key == this ? "(this)" : key);
+			int key = keyTable[i];
+			if (key == 0) continue;
+			buffer.append(", ");
+			buffer.append(key);
 		}
+		buffer.append(']');
 		return buffer.toString();
 	}
 
-	/**
-	 * Returns an iterator for the keys in the set. Remove is supported.
+	/** Returns an iterator for the keys in the set. Remove is supported.
 	 * <p>
-	 * If {@link Collections#allocateIterators} is false, the same iterator instance is returned each time this method is called. Use the
-	 * {@link MerryObjectSetIterator} constructor for nested or multithreaded iteration.
-	 */
-	public MerryObjectSetIterator<T> iterator () {
-		if (Collections.allocateIterators)
-			return new MerryObjectSetIterator(this);
+	 * If {@link Collections#allocateIterators} is false, the same iterator instance is returned each time this method is called.
+	 * Use the {@link IntSetIterator} constructor for nested or multithreaded iteration. */
+	public IntSetIterator iterator () {
+		if (Collections.allocateIterators) return new IntSetIterator(this);
 		if (iterator1 == null) {
-			iterator1 = new MerryObjectSetIterator(this);
-			iterator2 = new MerryObjectSetIterator(this);
+			iterator1 = new IntSetIterator(this);
+			iterator2 = new IntSetIterator(this);
 		}
 		if (!iterator1.valid) {
 			iterator1.reset();
@@ -547,35 +471,41 @@ public class ObjectSet<T> implements Iterable<T> {
 		return iterator2;
 	}
 
-	static public <T> ObjectSet<T> with (T... array) {
-		ObjectSet<T> set = new ObjectSet<T>();
+	static public IntSet with (int... array) {
+		IntSet set = new IntSet();
 		set.addAll(array);
 		return set;
 	}
 
-	static public class MerryObjectSetIterator<K> implements Iterable<K>, Iterator<K> {
+	static public class IntSetIterator {
+		static final int INDEX_ILLEGAL = -2;
+		static final int INDEX_ZERO = -1;
+
 		public boolean hasNext;
 
-		final ObjectSet<K> set;
+		final IntSet set;
 		int nextIndex, currentIndex;
 		boolean valid = true;
 
-		public MerryObjectSetIterator (ObjectSet<K> set) {
+		public IntSetIterator (IntSet set) {
 			this.set = set;
 			reset();
 		}
 
 		public void reset () {
-			currentIndex = -1;
-			nextIndex = -1;
-			findNextIndex();
+			currentIndex = INDEX_ILLEGAL;
+			nextIndex = INDEX_ZERO;
+			if (set.hasZeroValue)
+				hasNext = true;
+			else
+				findNextIndex();
 		}
 
-		private void findNextIndex () {
+		void findNextIndex () {
 			hasNext = false;
-			K[] keyTable = set.keyTable;
-			for (int n = set.ib.length; ++nextIndex < n; ) {
-				if (keyTable[nextIndex] != null) {
+			int[] keyTable = set.keyTable;
+			for (int n = keyTable.length; ++nextIndex < n; ) {
+				if (keyTable[nextIndex] != 0) {
 					hasNext = true;
 					break;
 				}
@@ -583,58 +513,41 @@ public class ObjectSet<T> implements Iterable<T> {
 		}
 
 		public void remove () {
-			if (currentIndex < 0)
+			if (currentIndex == INDEX_ZERO && set.hasZeroValue) {
+				set.hasZeroValue = false;
+			} else if (currentIndex < 0) {
 				throw new IllegalStateException("next must be called before remove.");
-
-			K[] keyTable = set.keyTable;
-			int[] ib = set.ib;
-			int mask = set.mask;
-			keyTable[currentIndex] = null;
-			for (int i = (currentIndex + 1) & mask; (keyTable[i] != null && (i - ib[i] & mask) != 0); i = (i + 1) & mask) {
-				keyTable[i - 1 & mask] = keyTable[i];
-				ib[i - 1 & mask] = ib[i];
-				keyTable[i] = null;
-				ib[i] = 0;
+			} else {
+				int[] keyTable = set.keyTable;
+				int[] ib = set.ib;
+				int mask = set.mask;
+				keyTable[currentIndex] = 0;
+				for (int i = (currentIndex + 1) & mask; (keyTable[i] != 0 && (i - ib[i] & mask) != 0); i = (i + 1) & mask) {
+					keyTable[i - 1 & mask] = keyTable[i];
+					ib[i - 1 & mask] = ib[i];
+					keyTable[i] = 0;
+					ib[i] = 0;
+				}
 			}
-			currentIndex = -1;
+			currentIndex = INDEX_ILLEGAL;
 			set.size--;
 		}
 
-		public boolean hasNext () {
-			if (!valid)
-				throw new GdxRuntimeException("#iterator() cannot be used nested.");
-			return hasNext;
-		}
-
-		public K next () {
-			if (!hasNext)
-				throw new NoSuchElementException();
-			if (!valid)
-				throw new GdxRuntimeException("#iterator() cannot be used nested.");
-			K key = set.keyTable[nextIndex];
+		public int next () {
+			if (!hasNext) throw new NoSuchElementException();
+			if (!valid) throw new GdxRuntimeException("#iterator() cannot be used nested.");
+			int key = nextIndex == INDEX_ZERO ? 0 : set.keyTable[nextIndex];
 			currentIndex = nextIndex;
 			findNextIndex();
 			return key;
 		}
 
-		public MerryObjectSetIterator<K> iterator () {
-			return this;
-		}
-
-		/**
-		 * Adds the remaining values to the array.
-		 */
-		public Array<K> toArray (Array<K> array) {
+		/** Returns a new array containing the remaining keys. */
+		public IntArray toArray () {
+			IntArray array = new IntArray(true, set.size);
 			while (hasNext)
 				array.add(next());
 			return array;
-		}
-
-		/**
-		 * Returns a new array containing the remaining values.
-		 */
-		public Array<K> toArray () {
-			return toArray(new Array<K>(true, set.size));
 		}
 	}
 }
