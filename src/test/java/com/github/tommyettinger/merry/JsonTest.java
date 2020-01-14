@@ -18,4 +18,14 @@ public class JsonTest {
 		ObjectSet from = json.fromJson(ObjectSet.class, pretty);
 		Assert.assertEquals(from, set);
 	}
+	@Test
+	public void testOrderedSet()
+	{
+		Json json = new Json();
+		OrderedSet<String> set = OrderedSet.with("Robin", "Hood", "and his band of", "Merry", "Men");
+		String pretty = json.prettyPrint(set);
+		System.out.println(pretty);
+		OrderedSet from = json.fromJson(OrderedSet.class, pretty);
+		Assert.assertEquals(from, set);
+	}
 }
