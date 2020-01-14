@@ -19,6 +19,8 @@ package com.github.tommyettinger.merry;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.GdxRuntimeException;
+import com.badlogic.gdx.utils.Json;
+import com.badlogic.gdx.utils.JsonValue;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -97,7 +99,7 @@ import java.util.NoSuchElementException;
  * @author Tommy Ettinger
  * @author Nathan Sweet
  */
-public class ObjectMap<K, V> implements Iterable<ObjectMap.Entry<K, V>> {
+public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.Entry<K, V>> {
 	static final Object dummy = new Object();
 
 	public int size;
@@ -695,6 +697,47 @@ public class ObjectMap<K, V> implements Iterable<ObjectMap.Entry<K, V>> {
 		keys2.valid = true;
 		keys1.valid = false;
 		return keys2;
+	}
+
+	public void write (Json json) {
+		if(isEmpty())
+			return;
+		if(keys().next() instanceof String)
+		{
+			json.writeObjectStart("entries");
+			for (Entry<K, V> entry : entries()) {
+				json.writeValue(String.valueOf(entry.key), entry.value, null);
+			}
+			json.writeObjectEnd();
+		}
+		else {
+			json.writeArrayStart("entries");
+			for(Entry<K, V> entry : entries()) {
+				json.writeValue(entry.key, null);
+				json.writeValue(entry.value, null);
+			}
+			json.writeArrayEnd();
+		}
+	}
+
+	public void read (Json json, JsonValue jsonData) {
+		if(jsonData.isEmpty())
+			return;
+		JsonValue entries = jsonData.get("entries");
+		if(entries.isObject())
+		{
+			for (JsonValue child = entries.child; child != null; child = child.next)
+				put((K)child.name, (V)json.readValue(null, child));
+		}
+		else if(entries.isArray())
+		{
+			for (JsonValue child = entries.child; child != null; child = child.next)
+			{
+				K key = json.readValue(null, child);
+				V value = json.readValue(null, child = child.next);
+				put(key, value);
+			}
+		}
 	}
 
 	static public class Entry<K, V> {
