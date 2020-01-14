@@ -20,6 +20,8 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Collections;
 import com.badlogic.gdx.utils.GdxRuntimeException;
+import com.badlogic.gdx.utils.Json;
+import com.badlogic.gdx.utils.JsonValue;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -98,7 +100,7 @@ import java.util.NoSuchElementException;
  * @author Tommy Ettinger
  * @author Nathan Sweet
  */
-public class ObjectSet<T> implements Iterable<T> {
+public class ObjectSet<T> implements Json.Serializable, Iterable<T> {
 	public int size;
 
 	T[] keyTable;
@@ -551,6 +553,15 @@ public class ObjectSet<T> implements Iterable<T> {
 		ObjectSet<T> set = new ObjectSet<T>();
 		set.addAll(array);
 		return set;
+	}
+
+	public void write (Json json) {
+		Array<T> items = iterator().toArray();
+		json.writeValue("items", items, Array.class);
+	}
+
+	public void read (Json json, JsonValue jsonData) {
+		addAll(json.readValue("items", Array.class, jsonData));
 	}
 
 	static public class MerryObjectSetIterator<K> implements Iterable<K>, Iterator<K> {
