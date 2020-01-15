@@ -109,7 +109,7 @@ import java.util.NoSuchElementException;
  * @author Tommy Ettinger
  * @author Nathan Sweet
  */
-public class IntFloatMap<V> implements Iterable<IntFloatMap.Entry> {
+public class IntFloatMap implements Iterable<IntFloatMap.Entry> {
 	public int size;
 
 	private int[] keyTable;
@@ -189,7 +189,7 @@ public class IntFloatMap<V> implements Iterable<IntFloatMap.Entry> {
 	/**
 	 * Creates a new map identical to the specified map.
 	 */
-	public IntFloatMap (IntFloatMap<? extends V> map) {
+	public IntFloatMap (IntFloatMap map) {
 		this((int)(map.ib.length * map.loadFactor), map.loadFactor);
 		System.arraycopy(map.keyTable, 0, keyTable, 0, map.keyTable.length);
 		System.arraycopy(map.valueTable, 0, valueTable, 0, map.valueTable.length);
@@ -310,7 +310,7 @@ public class IntFloatMap<V> implements Iterable<IntFloatMap.Entry> {
 		// never reached
 	}
 
-	public void putAll (IntFloatMap<? extends V> map) {
+	public void putAll (IntFloatMap map) {
 		ensureCapacity(map.size);
 		if (map.hasZeroValue)
 			put(0, map.zeroValue);
@@ -324,7 +324,7 @@ public class IntFloatMap<V> implements Iterable<IntFloatMap.Entry> {
 	}
 	// the old version; I think the new way avoids a little work
 //	   ensureCapacity(map.size);
-//		for (Entry<? extends V> entry : map.entries())
+//		for (Entry entry : map.entries())
 //			put(entry.key, entry.value);
 
 	/**
@@ -661,7 +661,7 @@ public class IntFloatMap<V> implements Iterable<IntFloatMap.Entry> {
 	 * If {@link Collections#allocateIterators} is false, the same iterator instance is returned each time this method is called.
 	 * Use the {@link Entries} constructor for nested or multithreaded iteration.
 	 */
-	public Entries<V> entries () {
+	public Entries entries () {
 		if (Collections.allocateIterators)
 			return new Entries(this);
 		if (entries1 == null) {
@@ -739,17 +739,17 @@ public class IntFloatMap<V> implements Iterable<IntFloatMap.Entry> {
 		}
 	}
 
-	static private class MapIterator<V> {
+	static private class MapIterator {
 		static final int INDEX_ILLEGAL = -2;
 		static final int INDEX_ZERO = -1;
 
 		public boolean hasNext;
 
-		final IntFloatMap<V> map;
+		final IntFloatMap map;
 		int nextIndex, currentIndex;
 		boolean valid = true;
 
-		public MapIterator (IntFloatMap<V> map) {
+		public MapIterator (IntFloatMap map) {
 			this.map = map;
 			reset();
 		}
@@ -798,7 +798,7 @@ public class IntFloatMap<V> implements Iterable<IntFloatMap.Entry> {
 		}
 	}
 
-	static public class Entries<V> extends MapIterator<V> implements Iterable<Entry>, Iterator<Entry> {
+	static public class Entries extends MapIterator implements Iterable<Entry>, Iterator<Entry> {
 		private Entry entry = new Entry();
 
 		public Entries (IntFloatMap map) {
@@ -841,7 +841,7 @@ public class IntFloatMap<V> implements Iterable<IntFloatMap.Entry> {
 		}
 	}
 
-	static public class Values extends MapIterator<Object> {
+	static public class Values extends MapIterator {
 		public Values (IntFloatMap map) {
 			super(map);
 		}

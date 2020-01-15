@@ -109,7 +109,7 @@ import java.util.NoSuchElementException;
  * @author Tommy Ettinger
  * @author Nathan Sweet
  */
-public class IntIntMap<V> implements Json.Serializable, Iterable<IntIntMap.Entry> {
+public class IntIntMap implements Json.Serializable, Iterable<IntIntMap.Entry> {
 	public int size;
 
 	private int[] keyTable;
@@ -189,7 +189,7 @@ public class IntIntMap<V> implements Json.Serializable, Iterable<IntIntMap.Entry
 	/**
 	 * Creates a new map identical to the specified map.
 	 */
-	public IntIntMap (IntIntMap<? extends V> map) {
+	public IntIntMap (IntIntMap map) {
 		this((int)(map.ib.length * map.loadFactor), map.loadFactor);
 		System.arraycopy(map.keyTable, 0, keyTable, 0, map.keyTable.length);
 		System.arraycopy(map.valueTable, 0, valueTable, 0, map.valueTable.length);
@@ -310,7 +310,7 @@ public class IntIntMap<V> implements Json.Serializable, Iterable<IntIntMap.Entry
 		// never reached
 	}
 
-	public void putAll (IntIntMap<? extends V> map) {
+	public void putAll (IntIntMap map) {
 		ensureCapacity(map.size);
 		if (map.hasZeroValue)
 			put(0, map.zeroValue);
@@ -324,7 +324,7 @@ public class IntIntMap<V> implements Json.Serializable, Iterable<IntIntMap.Entry
 	}
 	// the old version; I think the new way avoids a little work
 //	   ensureCapacity(map.size);
-//		for (Entry<? extends V> entry : map.entries())
+//		for (Entry entry : map.entries())
 //			put(entry.key, entry.value);
 
 	/**
@@ -661,7 +661,7 @@ public class IntIntMap<V> implements Json.Serializable, Iterable<IntIntMap.Entry
 	 * If {@link Collections#allocateIterators} is false, the same iterator instance is returned each time this method is called.
 	 * Use the {@link Entries} constructor for nested or multithreaded iteration.
 	 */
-	public Entries<V> entries () {
+	public Entries entries () {
 		if (Collections.allocateIterators)
 			return new Entries(this);
 		if (entries1 == null) {
@@ -758,17 +758,17 @@ public class IntIntMap<V> implements Json.Serializable, Iterable<IntIntMap.Entry
 		}
 	}
 
-	static private class MapIterator<V> {
+	static private class MapIterator {
 		static final int INDEX_ILLEGAL = -2;
 		static final int INDEX_ZERO = -1;
 
 		public boolean hasNext;
 
-		final IntIntMap<V> map;
+		final IntIntMap map;
 		int nextIndex, currentIndex;
 		boolean valid = true;
 
-		public MapIterator (IntIntMap<V> map) {
+		public MapIterator (IntIntMap map) {
 			this.map = map;
 			reset();
 		}
@@ -818,7 +818,7 @@ public class IntIntMap<V> implements Json.Serializable, Iterable<IntIntMap.Entry
 		}
 	}
 
-	static public class Entries<V> extends MapIterator<V> implements Iterable<Entry>, Iterator<Entry> {
+	static public class Entries extends MapIterator implements Iterable<Entry>, Iterator<Entry> {
 		private Entry entry = new Entry();
 
 		public Entries (IntIntMap map) {
@@ -861,7 +861,7 @@ public class IntIntMap<V> implements Json.Serializable, Iterable<IntIntMap.Entry
 		}
 	}
 
-	static public class Values extends MapIterator<Object> {
+	static public class Values extends MapIterator {
 		public Values (IntIntMap map) {
 			super(map);
 		}

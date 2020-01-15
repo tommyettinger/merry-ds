@@ -117,7 +117,7 @@ public class JsonTest {
 	public void testIntIntMap()
 	{
 		Json json = new Json();
-		IntIntMap<String> map = new IntIntMap<>();
+		IntIntMap map = new IntIntMap();
 		map.put(0, 42);
 		map.put(1, 0);
 		map.put(2, 23);
