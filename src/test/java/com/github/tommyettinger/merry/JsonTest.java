@@ -88,4 +88,14 @@ public class JsonTest {
 		OrderedMap from = json.fromJson(OrderedMap.class, pretty);
 		Assert.assertEquals(from, map);
 	}
+	@Test
+	public void testIntSet()
+	{
+		Json json = new Json();
+		IntSet set = IntSet.with(42, 0, 23, 1337, 9001, -111, -2147483648);
+		String pretty = json.prettyPrint(set);
+		System.out.println(pretty);
+		IntSet from = json.fromJson(IntSet.class, pretty);
+		Assert.assertEquals(from, set);
+	}
 }
