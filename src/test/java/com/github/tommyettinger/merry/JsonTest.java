@@ -58,4 +58,34 @@ public class JsonTest {
 		ObjectMap from = json.fromJson(ObjectMap.class, pretty);
 		Assert.assertEquals(from, map);
 	}
+	@Test
+	public void testOrderedMapString()
+	{
+		Json json = new Json();
+		OrderedMap<String, Integer> map = new OrderedMap<>();
+		map.put("Robin", 0);
+		map.put("Hood", 1);
+		map.put("and his band of", 2);
+		map.put("Merry", 3);
+		map.put("Men", 4);
+		String pretty = json.prettyPrint(map);
+		System.out.println(pretty);
+		OrderedMap from = json.fromJson(OrderedMap.class, pretty);
+		Assert.assertEquals(from, map);
+	}
+	@Test
+	public void testOrderedMapOther()
+	{
+		Json json = new Json();
+		OrderedMap<Integer, String> map = new OrderedMap<>();
+		map.put(0, "Robin");
+		map.put(1, "Hood");
+		map.put(2, "and his band of");
+		map.put(3, "Merry");
+		map.put(4, "Men");
+		String pretty = json.prettyPrint(map);
+		System.out.println(pretty);
+		OrderedMap from = json.fromJson(OrderedMap.class, pretty);
+		Assert.assertEquals(from, map);
+	}
 }
