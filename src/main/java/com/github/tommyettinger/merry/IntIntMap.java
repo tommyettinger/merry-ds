@@ -20,6 +20,8 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Collections;
 import com.badlogic.gdx.utils.IntArray;
 import com.badlogic.gdx.utils.GdxRuntimeException;
+import com.badlogic.gdx.utils.Json;
+import com.badlogic.gdx.utils.JsonValue;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -107,7 +109,7 @@ import java.util.NoSuchElementException;
  * @author Tommy Ettinger
  * @author Nathan Sweet
  */
-public class IntIntMap<V> implements Iterable<IntIntMap.Entry> {
+public class IntIntMap<V> implements Json.Serializable, Iterable<IntIntMap.Entry> {
 	public int size;
 
 	private int[] keyTable;
@@ -727,6 +729,25 @@ public class IntIntMap<V> implements Iterable<IntIntMap.Entry> {
 		keys1.valid = false;
 		return keys2;
 	}
+
+	public void write (Json json) {
+		json.writeArrayStart("entries");
+		for(Entry entry : entries()) {
+			json.writeValue(entry.key, Integer.class);
+			json.writeValue(entry.value, Integer.class);
+		}
+		json.writeArrayEnd();
+	}
+
+	public void read (Json json, JsonValue jsonData) {
+		for (JsonValue child = jsonData.get("entries").child; child != null; child = child.next)
+		{
+			int key = child.asInt();
+			int value = (child = child.next).asInt();
+			put(key, value);
+		}
+	}
+
 
 	static public class Entry {
 		public int key;

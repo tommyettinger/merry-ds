@@ -113,5 +113,20 @@ public class JsonTest {
 		IntMap from = json.fromJson(IntMap.class, pretty);
 		Assert.assertEquals(from, map);
 	}
+	@Test
+	public void testIntIntMap()
+	{
+		Json json = new Json();
+		IntIntMap<String> map = new IntIntMap<>();
+		map.put(0, 42);
+		map.put(1, 0);
+		map.put(2, 23);
+		map.put(3, 1337);
+		map.put(4, -2147483648);
+		String pretty = json.prettyPrint(map);
+		System.out.println(pretty);
+		IntIntMap from = json.fromJson(IntIntMap.class, pretty);
+		Assert.assertEquals(from, map);
+	}
 
 }

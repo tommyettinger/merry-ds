@@ -820,7 +820,6 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 			json.writeValue(entry.value, null);
 		}
 		json.writeArrayEnd();
-
 	}
 
 	public void read (Json json, JsonValue jsonData) {
@@ -830,7 +829,6 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 			V value = json.readValue(null, child = child.next);
 			put(key, value);
 		}
-
 	}
 
 	static public class Entry<V> {
