@@ -98,4 +98,20 @@ public class JsonTest {
 		IntSet from = json.fromJson(IntSet.class, pretty);
 		Assert.assertEquals(from, set);
 	}
+	@Test
+	public void testIntMap()
+	{
+		Json json = new Json();
+		IntMap<String> map = new IntMap<>();
+		map.put(0, "Robin");
+		map.put(1, "Hood");
+		map.put(2, "and his band of");
+		map.put(3, "Merry");
+		map.put(4, "Men");
+		String pretty = json.prettyPrint(map);
+		System.out.println(pretty);
+		IntMap from = json.fromJson(IntMap.class, pretty);
+		Assert.assertEquals(from, map);
+	}
+
 }
