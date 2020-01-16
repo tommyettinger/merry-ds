@@ -2,6 +2,7 @@ package com.github.tommyettinger.merry;
 
 import com.badlogic.gdx.utils.Json;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -157,6 +158,27 @@ public class JsonTest {
 		String pretty = json.prettyPrint(map);
 		System.out.println(pretty);
 		LongMap from = json.fromJson(LongMap.class, pretty);
+		Assert.assertEquals(from, map);
+	}
+
+	/**
+	 * This will definitely fail because the identity equality check at the end won't have the same
+	 * identities for keys.
+	 */
+	@Test
+	@Ignore
+	public void testIdentityMap()
+	{
+		Json json = new Json();
+		IdentityMap<Integer, String> map = new IdentityMap<>();
+		map.put(new Integer(256), "Robin");
+		map.put(new Integer(256), "Hood");
+		map.put(new Integer(256), "and his band of");
+		map.put(new Integer(256), "Merry");
+		map.put(new Integer(256), "Men");
+		String pretty = json.prettyPrint(map);
+		System.out.println(pretty);
+		IdentityMap from = json.fromJson(IdentityMap.class, pretty);
 		Assert.assertEquals(from, map);
 	}
 }

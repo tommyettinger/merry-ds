@@ -22,7 +22,10 @@ package com.github.tommyettinger.merry;
  * power-of-two mask. Null keys are not allowed. Null values are allowed. No allocation is done except when growing the
  * table size. It uses {@link System#identityHashCode(Object)} to hash keys, which may be slower than the hashCode() of
  * some types that have it already computed, like String; for String keys in particular, identity comparison is a
- * challenge and some other map should be used instead.
+ * challenge and some other map should be used instead. This class implements {@link com.badlogic.gdx.utils.Json.Serializable},
+ * but the behavior of Json serialization with identity equality is uncertain at best. You may want to get separate key and
+ * value Arrays with {@link Keys#toArray()} and {@link Values#toArray()} and serialize those, though even that technique may
+ * fail with some key types ({@code int[]} and other primitive arrays can be used as keys here, but not serialized).
  * <br>
  * See <a href="https://codecapsule.com/2013/11/11/robin-hood-hashing/">Emmanuel Goossaert's blog post</a> for more
  * information on Robin Hood hashing. It isn't state-of-the art in C++ or Rust any more, but newer techniques like Swiss
