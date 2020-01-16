@@ -815,7 +815,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 
 	public void write (Json json) {
 		json.writeArrayStart("entries");
-		for(Entry<V> entry : entries()) {
+		for (Entry<V> entry : entries()) {
 			json.writeValue(entry.key, Integer.class);
 			json.writeValue(entry.value, null);
 		}
@@ -823,8 +823,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	}
 
 	public void read (Json json, JsonValue jsonData) {
-		for (JsonValue child = jsonData.get("entries").child; child != null; child = child.next)
-		{
+		for (JsonValue child = jsonData.get("entries").child; child != null; child = child.next) {
 			int key = child.asInt();
 			V value = json.readValue(null, child = child.next);
 			put(key, value);
@@ -1016,6 +1015,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 				array.add(next());
 			return array;
 		}
+
 		/**
 		 * Adds the remaining values to the specified array.
 		 */

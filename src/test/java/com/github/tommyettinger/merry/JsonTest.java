@@ -144,5 +144,19 @@ public class JsonTest {
 		IntFloatMap from = json.fromJson(IntFloatMap.class, pretty);
 		Assert.assertEquals(from, map);
 	}
-
+	@Test
+	public void testLongMap()
+	{
+		Json json = new Json();
+		LongMap<String> map = new LongMap<>();
+		map.put(0, "Robin");
+		map.put(1, "Hood");
+		map.put(-23, "and his band of");
+		map.put(0x1337BEEFC0DEDEAL, "Merry");
+		map.put(Long.MIN_VALUE, "Men");
+		String pretty = json.prettyPrint(map);
+		System.out.println(pretty);
+		LongMap from = json.fromJson(LongMap.class, pretty);
+		Assert.assertEquals(from, map);
+	}
 }

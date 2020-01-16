@@ -20,6 +20,8 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Collections;
 import com.badlogic.gdx.utils.GdxRuntimeException;
+import com.badlogic.gdx.utils.Json;
+import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.LongArray;
 
 import java.util.Iterator;
@@ -108,7 +110,7 @@ import java.util.NoSuchElementException;
  * @author Tommy Ettinger
  * @author Nathan Sweet
  */
-public class LongMap<V> implements Iterable<LongMap.Entry<V>> {
+public class LongMap<V> implements Json.Serializable, Iterable<LongMap.Entry<V>> {
 	public int size;
 
 	private long[] keyTable;
@@ -811,6 +813,26 @@ public class LongMap<V> implements Iterable<LongMap.Entry<V>> {
 		return keys2;
 	}
 
+	public void write (Json json) {
+		json.writeArrayStart("entries");
+		for (Entry<V> entry : entries()) {
+			// we're working around the lack of precise 64-bit integers in JSON here
+			json.writeValue((int)(entry.key >>> 32), Integer.class);
+			json.writeValue((int)entry.key, Integer.class);
+			json.writeValue(entry.value, null);
+		}
+		json.writeArrayEnd();
+	}
+
+	public void read (Json json, JsonValue jsonData) {
+		for (JsonValue child = jsonData.get("entries").child; child != null; child = child.next) {
+			long key = (child.asInt() & 0xFFFFFFFFL) << 32;
+			key |= (child = child.next).asInt() & 0xFFFFFFFFL;
+			V value = json.readValue(null, child = child.next);
+			put(key, value);
+		}
+	}
+
 	static public class Entry<V> {
 		public long key;
 		public V value;
@@ -996,6 +1018,7 @@ public class LongMap<V> implements Iterable<LongMap.Entry<V>> {
 				array.add(next());
 			return array;
 		}
+
 		/**
 		 * Adds the remaining values to the specified array.
 		 */

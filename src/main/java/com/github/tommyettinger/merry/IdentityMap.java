@@ -128,14 +128,12 @@ public class IdentityMap<K, V> extends ObjectMap<K, V> {
 		super(map);
 	}
 
-	@Override
-	protected int place (K item) {
+	@Override protected int place (K item) {
 		return (int)(System.identityHashCode(item) * 0x9E3779B97F4A7C15L >>> shift);
 		//return (System.identityHashCode(item) & mask);
 	}
 
-	@Override
-	int locateKey (K key, int placement) {
+	@Override int locateKey (K key, int placement) {
 		for (int i = placement; ; i = i + 1 & mask) {
 			// empty space is available
 			if (keyTable[i] == null) {

@@ -258,7 +258,7 @@ public class IntFloatMap implements Json.Serializable, Iterable<IntFloatMap.Entr
 			}
 		}
 	}
-	
+
 	/**
 	 * Doesn't return a value, unlike other maps.
 	 */
@@ -395,7 +395,7 @@ public class IntFloatMap implements Json.Serializable, Iterable<IntFloatMap.Entr
 			}
 		}
 	}
-	
+
 	/**
 	 * Returns the key's current value and increments the stored value. If the key is not in the map, defaultValue + increment is
 	 * put into the map.
@@ -497,13 +497,12 @@ public class IntFloatMap implements Json.Serializable, Iterable<IntFloatMap.Entr
 		hasZeroValue = false;
 	}
 
-
 	/**
 	 * Returns true if the specified value is in the map. Note this traverses the entire map and compares every value, which may
 	 * be an expensive operation.
 	 */
 	public boolean containsValue (int value) {
-		if(hasZeroValue && zeroValue == value)
+		if (hasZeroValue && zeroValue == value)
 			return true;
 		final int[] keyTable = this.keyTable;
 		final float[] valueTable = this.valueTable;
@@ -524,7 +523,8 @@ public class IntFloatMap implements Json.Serializable, Iterable<IntFloatMap.Entr
 	 * every value, which may be an expensive operation.
 	 */
 	public int findKey (int value, int notFound) {
-		if(hasZeroValue && zeroValue == value) return 0;
+		if (hasZeroValue && zeroValue == value)
+			return 0;
 		final int[] keyTable = this.keyTable;
 		final float[] valueTable = this.valueTable;
 		for (int i = valueTable.length; i-- > 0; ) {
@@ -534,7 +534,7 @@ public class IntFloatMap implements Json.Serializable, Iterable<IntFloatMap.Entr
 		}
 		return notFound;
 	}
-	
+
 	/**
 	 * Increases the size of the backing array to accommodate the specified number of additional items. Useful before adding many
 	 * items to avoid multiple backing array resizes.
@@ -734,7 +734,7 @@ public class IntFloatMap implements Json.Serializable, Iterable<IntFloatMap.Entr
 
 	public void write (Json json) {
 		json.writeArrayStart("entries");
-		for(Entry entry : entries()) {
+		for (Entry entry : entries()) {
 			json.writeValue(entry.key, Integer.class);
 			json.writeValue(entry.value, Float.class);
 		}
@@ -931,6 +931,7 @@ public class IntFloatMap implements Json.Serializable, Iterable<IntFloatMap.Entr
 				array.add(next());
 			return array;
 		}
+
 		/**
 		 * Adds the remaining values to the specified array.
 		 */

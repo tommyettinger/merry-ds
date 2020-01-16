@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2011 See AUTHORS file.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,7 +25,8 @@ import com.badlogic.gdx.utils.JsonValue;
 
 import java.util.NoSuchElementException;
 
-/** An unordered set that uses int keys. This implementation uses Robin Hood Hashing with the backward-shift
+/**
+ * An unordered set that uses int keys. This implementation uses Robin Hood Hashing with the backward-shift
  * algorithm for removal, and finds space for keys using Fibonacci hashing instead of the more-common power-of-two mask.
  * No allocation is done except when growing the table size.
  * <br>
@@ -110,20 +111,28 @@ public class IntSet implements Json.Serializable {
 
 	private IntSetIterator iterator1, iterator2;
 
-	/** Creates a new set with an initial capacity of 51 and a load factor of 0.8. */
+	/**
+	 * Creates a new set with an initial capacity of 51 and a load factor of 0.8.
+	 */
 	public IntSet () {
 		this(51, 0.8f);
 	}
 
-	/** Creates a new set with a load factor of 0.8.
-	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two. */
+	/**
+	 * Creates a new set with a load factor of 0.8.
+	 *
+	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two.
+	 */
 	public IntSet (int initialCapacity) {
 		this(initialCapacity, 0.8f);
 	}
 
-	/** Creates a new set with the specified initial capacity and load factor. This set will hold initialCapacity items before
+	/**
+	 * Creates a new set with the specified initial capacity and load factor. This set will hold initialCapacity items before
 	 * growing the backing table.
-	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two. */
+	 *
+	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two.
+	 */
 	public IntSet (int initialCapacity, float loadFactor) {
 		if (initialCapacity < 0)
 			throw new IllegalArgumentException("initialCapacity must be >= 0: " + initialCapacity);
@@ -143,7 +152,9 @@ public class IntSet implements Json.Serializable {
 		ib = new int[initialCapacity];
 	}
 
-	/** Creates a new set identical to the specified set. */
+	/**
+	 * Creates a new set identical to the specified set.
+	 */
 	public IntSet (IntSet set) {
 		this((int)(set.ib.length * set.loadFactor), set.loadFactor);
 		System.arraycopy(set.keyTable, 0, keyTable, 0, set.keyTable.length);
@@ -151,6 +162,7 @@ public class IntSet implements Json.Serializable {
 		size = set.size;
 		hasZeroValue = set.hasZeroValue;
 	}
+
 	private int place (final int item) {
 		// shift is always greater than 32, less than 64
 		return (int)(item * 0x9E3779B97F4A7C15L >>> shift);
@@ -178,10 +190,13 @@ public class IntSet implements Json.Serializable {
 		}
 	}
 
-	/** Returns true if the key was not already in the set. */
+	/**
+	 * Returns true if the key was not already in the set.
+	 */
 	public boolean add (int key) {
 		if (key == 0) {
-			if (hasZeroValue) return false;
+			if (hasZeroValue)
+				return false;
 			hasZeroValue = true;
 			size++;
 			return true;
@@ -226,7 +241,8 @@ public class IntSet implements Json.Serializable {
 
 	public void addAll (IntArray array, int offset, int length) {
 		if (offset + length > array.size)
-			throw new IllegalArgumentException("offset + length must be <= size: " + offset + " + " + length + " <= " + array.size);
+			throw new IllegalArgumentException(
+				"offset + length must be <= size: " + offset + " + " + length + " <= " + array.size);
 		addAll(array.items, offset, length);
 	}
 
@@ -250,17 +266,20 @@ public class IntSet implements Json.Serializable {
 			if ((k = keyTable[i]) != 0)
 				add(k);
 		}
-		
+
 //		ensureCapacity(set.size);
 //		IntSetIterator iterator = set.iterator();
 //		while (iterator.hasNext)
 //			add(iterator.next());
 	}
 
-	/** Skips checks for existing keys. */
+	/**
+	 * Skips checks for existing keys.
+	 */
 	private void addResize (int key) {
 		if (key == 0) {
-			if(!hasZeroValue && size++ >= threshold) resize(ib.length << 1);
+			if (!hasZeroValue && size++ >= threshold)
+				resize(ib.length << 1);
 			hasZeroValue = true;
 			return;
 		}
@@ -292,10 +311,13 @@ public class IntSet implements Json.Serializable {
 		}
 	}
 
-	/** Returns true if the key was removed. */
+	/**
+	 * Returns true if the key was removed.
+	 */
 	public boolean remove (int key) {
 		if (key == 0) {
-			if (!hasZeroValue) return false;
+			if (!hasZeroValue)
+				return false;
 			hasZeroValue = false;
 			size--;
 			return true;
@@ -318,26 +340,37 @@ public class IntSet implements Json.Serializable {
 		return true;
 	}
 
-	/** Returns true if the set has one or more items. */
+	/**
+	 * Returns true if the set has one or more items.
+	 */
 	public boolean notEmpty () {
 		return size > 0;
 	}
 
-	/** Returns true if the set is empty. */
+	/**
+	 * Returns true if the set is empty.
+	 */
 	public boolean isEmpty () {
 		return size == 0;
 	}
 
-	/** Reduces the size of the backing arrays to be the specified capacity or less. If the capacity is already less, nothing is
-	 * done. If the set contains more items than the specified capacity, the next highest power of two capacity is used instead. */
+	/**
+	 * Reduces the size of the backing arrays to be the specified capacity or less. If the capacity is already less, nothing is
+	 * done. If the set contains more items than the specified capacity, the next highest power of two capacity is used instead.
+	 */
 	public void shrink (int maximumCapacity) {
-		if (maximumCapacity < 0) throw new IllegalArgumentException("maximumCapacity must be >= 0: " + maximumCapacity);
-		if (size > maximumCapacity) maximumCapacity = size;
-		if (ib.length <= maximumCapacity) return;
+		if (maximumCapacity < 0)
+			throw new IllegalArgumentException("maximumCapacity must be >= 0: " + maximumCapacity);
+		if (size > maximumCapacity)
+			maximumCapacity = size;
+		if (ib.length <= maximumCapacity)
+			return;
 		resize(MathUtils.nextPowerOfTwo(maximumCapacity));
 	}
 
-	/** Clears the set and reduces the size of the backing arrays to be the specified capacity if they are larger. */
+	/**
+	 * Clears the set and reduces the size of the backing arrays to be the specified capacity if they are larger.
+	 */
 	public void clear (int maximumCapacity) {
 		if (ib.length <= maximumCapacity) {
 			clear();
@@ -362,24 +395,31 @@ public class IntSet implements Json.Serializable {
 	}
 
 	public boolean contains (int key) {
-		if (key == 0) return hasZeroValue;
+		if (key == 0)
+			return hasZeroValue;
 		return locateKey(key) != -1;
 	}
 
 	public int first () {
-		if (hasZeroValue) return 0;
+		if (hasZeroValue)
+			return 0;
 		int[] keyTable = this.keyTable;
 		for (int i = 0, n = keyTable.length; i < n; i++)
-			if (keyTable[i] != 0) return keyTable[i];
+			if (keyTable[i] != 0)
+				return keyTable[i];
 		throw new IllegalStateException("IntSet is empty.");
 	}
 
-	/** Increases the size of the backing array to accommodate the specified number of additional items. Useful before adding many
-	 * items to avoid multiple backing array resizes. */
+	/**
+	 * Increases the size of the backing array to accommodate the specified number of additional items. Useful before adding many
+	 * items to avoid multiple backing array resizes.
+	 */
 	public void ensureCapacity (int additionalCapacity) {
-		if (additionalCapacity < 0) throw new IllegalArgumentException("additionalCapacity must be >= 0: " + additionalCapacity);
+		if (additionalCapacity < 0)
+			throw new IllegalArgumentException("additionalCapacity must be >= 0: " + additionalCapacity);
 		int sizeNeeded = size + additionalCapacity;
-		if (sizeNeeded >= threshold) resize(MathUtils.nextPowerOfTwo((int)Math.ceil(sizeNeeded / loadFactor)));
+		if (sizeNeeded >= threshold)
+			resize(MathUtils.nextPowerOfTwo((int)Math.ceil(sizeNeeded / loadFactor)));
 	}
 
 	private void resize (int newSize) {
@@ -403,7 +443,7 @@ public class IntSet implements Json.Serializable {
 			}
 		}
 	}
-	
+
 	public int hashCode () {
 		int h = size;
 		for (int i = 0, n = keyTable.length; i < n; i++) {
@@ -415,18 +455,23 @@ public class IntSet implements Json.Serializable {
 	}
 
 	public boolean equals (Object obj) {
-		if (!(obj instanceof IntSet)) return false;
+		if (!(obj instanceof IntSet))
+			return false;
 		IntSet other = (IntSet)obj;
-		if (other.size != size) return false;
-		if (other.hasZeroValue != hasZeroValue) return false;
+		if (other.size != size)
+			return false;
+		if (other.hasZeroValue != hasZeroValue)
+			return false;
 		int[] keyTable = this.keyTable;
 		for (int i = 0, n = keyTable.length; i < n; i++)
-			if (keyTable[i] != 0 && !other.contains(keyTable[i])) return false;
+			if (keyTable[i] != 0 && !other.contains(keyTable[i]))
+				return false;
 		return true;
 	}
 
 	public String toString () {
-		if (size == 0) return "[]";
+		if (size == 0)
+			return "[]";
 		StringBuilder buffer = new StringBuilder(32);
 		buffer.append('[');
 		int[] keyTable = this.keyTable;
@@ -436,14 +481,16 @@ public class IntSet implements Json.Serializable {
 		else {
 			while (i-- > 0) {
 				int key = keyTable[i];
-				if (key == 0) continue;
+				if (key == 0)
+					continue;
 				buffer.append(key);
 				break;
 			}
 		}
 		while (i-- > 0) {
 			int key = keyTable[i];
-			if (key == 0) continue;
+			if (key == 0)
+				continue;
 			buffer.append(", ");
 			buffer.append(key);
 		}
@@ -451,12 +498,15 @@ public class IntSet implements Json.Serializable {
 		return buffer.toString();
 	}
 
-	/** Returns an iterator for the keys in the set. Remove is supported.
+	/**
+	 * Returns an iterator for the keys in the set. Remove is supported.
 	 * <p>
 	 * If {@link Collections#allocateIterators} is false, the same iterator instance is returned each time this method is called.
-	 * Use the {@link IntSetIterator} constructor for nested or multithreaded iteration. */
+	 * Use the {@link IntSetIterator} constructor for nested or multithreaded iteration.
+	 */
 	public IntSetIterator iterator () {
-		if (Collections.allocateIterators) return new IntSetIterator(this);
+		if (Collections.allocateIterators)
+			return new IntSetIterator(this);
 		if (iterator1 == null) {
 			iterator1 = new IntSetIterator(this);
 			iterator2 = new IntSetIterator(this);
@@ -482,8 +532,7 @@ public class IntSet implements Json.Serializable {
 	public void write (Json json) {
 		json.writeArrayStart("items");
 		IntSetIterator it = iterator();
-		while (it.hasNext)
-		{
+		while (it.hasNext) {
 			json.writeValue(it.next(), Integer.class);
 		}
 		json.writeArrayEnd();
@@ -550,15 +599,19 @@ public class IntSet implements Json.Serializable {
 		}
 
 		public int next () {
-			if (!hasNext) throw new NoSuchElementException();
-			if (!valid) throw new GdxRuntimeException("#iterator() cannot be used nested.");
+			if (!hasNext)
+				throw new NoSuchElementException();
+			if (!valid)
+				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			int key = nextIndex == INDEX_ZERO ? 0 : set.keyTable[nextIndex];
 			currentIndex = nextIndex;
 			findNextIndex();
 			return key;
 		}
 
-		/** Returns a new array containing the remaining keys. */
+		/**
+		 * Returns a new array containing the remaining keys.
+		 */
 		public IntArray toArray () {
 			IntArray array = new IntArray(true, set.size);
 			while (hasNext)
