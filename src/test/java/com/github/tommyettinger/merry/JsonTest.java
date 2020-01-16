@@ -179,4 +179,19 @@ public class JsonTest {
 		ObjectIntMap from = json.fromJson(ObjectIntMap.class, pretty);
 		Assert.assertEquals(from, map);
 	}
+
+	@Test public void testObjectFloatMap () {
+		Json json = new Json();
+		ObjectFloatMap<String> map = new ObjectFloatMap<>();
+		map.put("Robin", 42.42f);
+		map.put("Hood", 0.0f);
+		map.put("and his band of", 23.23f);
+		map.put("Merry", 1337.1337f);
+		map.put("Men", Float.NEGATIVE_INFINITY);
+		String pretty = json.prettyPrint(map);
+		System.out.println(pretty);
+		ObjectFloatMap from = json.fromJson(ObjectFloatMap.class, pretty);
+		Assert.assertEquals(from, map);
+	}
+
 }

@@ -19,6 +19,8 @@ package com.github.tommyettinger.merry;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.FloatArray;
+import com.badlogic.gdx.utils.Json;
+import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.NumberUtils;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 
@@ -100,7 +102,7 @@ import java.util.NoSuchElementException;
  * @author Tommy Ettinger
  * @author Nathan Sweet
  */
-public class ObjectFloatMap<K> implements Iterable<ObjectFloatMap.Entry<K>> {
+public class ObjectFloatMap<K> implements Json.Serializable, Iterable<ObjectFloatMap.Entry<K>> {
 
 	public int size;
 
@@ -653,6 +655,42 @@ public class ObjectFloatMap<K> implements Iterable<ObjectFloatMap.Entry<K>> {
 		keys2.valid = true;
 		keys1.valid = false;
 		return keys2;
+	}
+
+
+	public void write (Json json) {
+		if (isEmpty())
+			return;
+		if (keys().next() instanceof String) {
+			json.writeObjectStart("entries");
+			for (Entry<K> entry : entries()) {
+				json.writeValue(String.valueOf(entry.key), entry.value, Float.class);
+			}
+			json.writeObjectEnd();
+		} else {
+			json.writeArrayStart("entries");
+			for (Entry<K> entry : entries()) {
+				json.writeValue(entry.key, null);
+				json.writeValue(entry.value, Float.class);
+			}
+			json.writeArrayEnd();
+		}
+	}
+
+	public void read (Json json, JsonValue jsonData) {
+		if (jsonData.isEmpty())
+			return;
+		JsonValue entries = jsonData.get("entries");
+		if (entries.isObject()) {
+			for (JsonValue child = entries.child; child != null; child = child.next)
+				put((K)child.name, child.asFloat());
+		} else if (entries.isArray()) {
+			for (JsonValue child = entries.child; child != null; child = child.next) {
+				K key = json.readValue(null, child);
+				float value = (child = child.next).asFloat();
+				put(key, value);
+			}
+		}
 	}
 
 	static public class Entry<K> {
