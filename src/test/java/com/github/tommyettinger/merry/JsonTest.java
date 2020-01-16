@@ -129,4 +129,20 @@ public class JsonTest {
 		Assert.assertEquals(from, map);
 	}
 
+	@Test
+	public void testIntFloatMap()
+	{
+		Json json = new Json();
+		IntFloatMap map = new IntFloatMap();
+		map.put(0, 42.42f);
+		map.put(1, 0.0f);
+		map.put(2, 23.23f);
+		map.put(3, 1337.1337f);
+		map.put(4, Float.NEGATIVE_INFINITY);
+		String pretty = json.prettyPrint(map);
+		System.out.println(pretty);
+		IntFloatMap from = json.fromJson(IntFloatMap.class, pretty);
+		Assert.assertEquals(from, map);
+	}
+
 }

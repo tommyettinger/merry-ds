@@ -740,15 +740,13 @@ public class IntIntMap implements Json.Serializable, Iterable<IntIntMap.Entry> {
 	}
 
 	public void read (Json json, JsonValue jsonData) {
-		for (JsonValue child = jsonData.get("entries").child; child != null; child = child.next)
-		{
+		for (JsonValue child = jsonData.get("entries").child; child != null; child = child.next) {
 			int key = child.asInt();
 			int value = (child = child.next).asInt();
 			put(key, value);
 		}
 	}
-
-
+	
 	static public class Entry {
 		public int key;
 		public int value;
