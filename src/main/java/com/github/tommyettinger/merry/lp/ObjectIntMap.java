@@ -19,16 +19,19 @@ package com.github.tommyettinger.merry.lp;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.GdxRuntimeException;
+import com.badlogic.gdx.utils.IntArray;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonValue;
+import com.github.tommyettinger.merry.OrderedMap;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * An unordered map where the keys are objects. This implementation uses Robin Hood Hashing with the backward-shift
- * algorithm for removal, and finds space for keys using Fibonacci hashing instead of the more-common power-of-two mask.
- * Null keys are not allowed. Null values are allowed. No allocation is done except when growing the table size.
+ * An unordered map where the keys are objects and the values are unboxed ints. This implementation uses Robin Hood
+ * Hashing with the backward-shift algorithm for removal, and finds space for keys using Fibonacci hashing instead of
+ * the more-common power-of-two mask. Null keys are not allowed. No allocation is done except when growing the table
+ * size.
  * <br>
  * See <a href="https://codecapsule.com/2013/11/11/robin-hood-hashing/">Emmanuel Goossaert's blog post</a> for more
  * information on Robin Hood hashing. It isn't state-of-the art in C++ or Rust any more, but newer techniques like Swiss
@@ -99,13 +102,12 @@ import java.util.NoSuchElementException;
  * @author Tommy Ettinger
  * @author Nathan Sweet
  */
-public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.Entry<K, V>> {
-	static final Object dummy = new Object();
+public class ObjectIntMap<K> implements Json.Serializable, Iterable<ObjectIntMap.Entry<K>> {
 
 	public int size;
 
 	K[] keyTable;
-	V[] valueTable;
+	int[] valueTable;
 
 	float loadFactor;
 	int threshold;
@@ -135,7 +137,7 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 	/**
 	 * Creates a new map with an initial capacity of 51 and a load factor of 0.8.
 	 */
-	public ObjectMap () {
+	public ObjectIntMap () {
 		this(51, 0.8f);
 	}
 
@@ -144,7 +146,7 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 	 *
 	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two.
 	 */
-	public ObjectMap (int initialCapacity) {
+	public ObjectIntMap (int initialCapacity) {
 		this(initialCapacity, 0.8f);
 	}
 
@@ -154,7 +156,7 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 	 *
 	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two.
 	 */
-	public ObjectMap (int initialCapacity, float loadFactor) {
+	public ObjectIntMap (int initialCapacity, float loadFactor) {
 		if (initialCapacity < 0)
 			throw new IllegalArgumentException("initialCapacity must be >= 0: " + initialCapacity);
 		if (loadFactor <= 0f || loadFactor >= 1f)
@@ -170,13 +172,13 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 		shift = Long.numberOfLeadingZeros(mask);
 
 		keyTable = (K[])new Object[initialCapacity];
-		valueTable = (V[])new Object[initialCapacity];
+		valueTable = new int[initialCapacity];
 	}
 
 	/**
 	 * Creates a new map identical to the specified map.
 	 */
-	public ObjectMap (ObjectMap<? extends K, ? extends V> map) {
+	public ObjectIntMap (ObjectIntMap<? extends K> map) {
 		this((int)Math.floor(map.keyTable.length * map.loadFactor), map.loadFactor);
 		System.arraycopy(map.keyTable, 0, keyTable, 0, map.keyTable.length);
 		System.arraycopy(map.valueTable, 0, valueTable, 0, map.valueTable.length);
@@ -236,20 +238,19 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 	}
 
 	/**
-	 * Returns the old value associated with the specified key, or null.
+	 * Doesn't return a value, unlike other maps.
 	 */
-	public V put (K key, V value) {
+	public void put (K key, int value) {
 		if (key == null)
 			throw new IllegalArgumentException("key cannot be null.");
 		K[] keyTable = this.keyTable;
-		V[] valueTable = this.valueTable;
+		int[] valueTable = this.valueTable;
 		int b = place(key);
 		int loc = locateKey(key, b);
 		// an identical key already exists
 		if (loc != -1) {
-			V tv = valueTable[loc];
 			valueTable[loc] = value;
-			return tv;
+			return;
 		}
 		for (int i = b; ; i = (i + 1) & mask) {
 			// space is available so we insert and break (resize is later)
@@ -262,31 +263,29 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 		if (++size >= threshold) {
 			resize(keyTable.length << 1);
 		}
-		return null;
 	}
 
-	//	public void putAll (ObjectMap<K, V> map) {
-//		ensureCapacity(map.size);
-//		for (Entry<K, V> entry : map)
-//			put(entry.key, entry.value);
-//	}
-	public void putAll (ObjectMap<K, V> map) {
+	public void putAll (ObjectIntMap<K> map) {
 		ensureCapacity(map.size);
 		final K[] keyTable = map.keyTable;
-		final V[] valueTable = map.valueTable;
+		final int[] valueTable = map.valueTable;
 		K k;
 		for (int i = 0, n = keyTable.length; i < n; i++) {
 			if ((k = keyTable[i]) != null)
 				put(k, valueTable[i]);
 		}
 	}
+//		ensureCapacity(map.size);
+//		for (Entry<K> entry : map)
+//			put(entry.key, entry.value);
+//	}
 
 	/**
 	 * Skips checks for existing keys.
 	 */
-	private void putResize (K key, V value) {
+	private void putResize (K key, int value) {
 		K[] keyTable = this.keyTable;
-		V[] valueTable = this.valueTable;
+		int[] valueTable = this.valueTable;
 		int b = place(key);
 		for (int i = b; ; i = (i + 1) & mask) {
 			// space is available so we insert and break (resize is later)
@@ -302,31 +301,38 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 	}
 
 	/**
-	 * Returns the value for the specified key, or null if the key is not in the map.
-	 */
-	public V get (K key) {
-		final int loc = locateKey(key);
-		return loc == -1 ? null : valueTable[loc];
-	}
-
-	/**
 	 * Returns the value for the specified key, or the default value if the key is not in the map.
 	 */
-	public V get (K key, V defaultValue) {
+	public int get (K key, int defaultValue) {
 		final int loc = locateKey(key);
 		return loc == -1 ? defaultValue : valueTable[loc];
 	}
 
-	public V remove (K key) {
+	/**
+	 * Returns the key's current value and increments the stored value. If the key is not in the map, defaultValue + increment is
+	 * put into the map.
+	 */
+	public int getAndIncrement (K key, int defaultValue, int increment) {
+		final int loc = locateKey(key);
+		// key was not found
+		if (loc == -1) {
+			// because we know there's no existing duplicate key, we can use putResize().
+			putResize(key, defaultValue + increment);
+			return defaultValue;
+		}
+		final int oldValue = valueTable[loc];
+		valueTable[loc] += increment;
+		return oldValue;
+	}
+
+	public int remove (K key, int defaultValue) {
 		int loc = locateKey(key);
 		if (loc == -1) {
-			return null;
+			return defaultValue;
 		}
 		keyTable[loc] = null;
-		V oldValue = valueTable[loc];
-		valueTable[loc] = null;
 		--size;
-		return oldValue;
+		return valueTable[loc];
 	}
 
 	/**
@@ -373,10 +379,8 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 		if (size == 0)
 			return;
 		K[] keyTable = this.keyTable;
-		V[] valueTable = this.valueTable;
 		for (int i = keyTable.length; i > 0; ) {
 			keyTable[--i] = null;
-			valueTable[i] = null;
 		}
 		size = 0;
 	}
@@ -384,26 +388,13 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 	/**
 	 * Returns true if the specified value is in the map. Note this traverses the entire map and compares every value, which may
 	 * be an expensive operation.
-	 *
-	 * @param identity If true, uses == to compare the specified value with values in the map. If false, uses
-	 *                 {@link #equals(Object)}.
 	 */
-	public boolean containsValue (Object value, boolean identity) {
-		V[] valueTable = this.valueTable;
-		if (value == null) {
-			K[] keyTable = this.keyTable;
-			for (int i = valueTable.length; i-- > 0; )
-				if (keyTable[i] != null && valueTable[i] == null)
-					return true;
-		} else if (identity) {
-			for (int i = valueTable.length; i-- > 0; )
-				if (valueTable[i] == value)
-					return true;
-		} else {
-			for (int i = valueTable.length; i-- > 0; )
-				if (value.equals(valueTable[i]))
-					return true;
-		}
+	public boolean containsValue (int value) {
+		final K[] keyTable = this.keyTable;
+		final int[] valueTable = this.valueTable;
+		for (int i = valueTable.length; i-- > 0; )
+			if (keyTable[i] != null && valueTable[i] == value)
+				return true;
 		return false;
 	}
 
@@ -414,25 +405,14 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 	/**
 	 * Returns the key for the specified value, or null if it is not in the map. Note this traverses the entire map and compares
 	 * every value, which may be an expensive operation.
-	 *
-	 * @param identity If true, uses == to compare the specified value with values in the map. If false, uses
-	 *                 {@link #equals(Object)}.
 	 */
-	public K findKey (Object value, boolean identity) {
-		V[] valueTable = this.valueTable;
-		if (value == null) {
-			K[] keyTable = this.keyTable;
-			for (int i = valueTable.length; i-- > 0; )
-				if (keyTable[i] != null && valueTable[i] == null)
-					return keyTable[i];
-		} else if (identity) {
-			for (int i = valueTable.length; i-- > 0; )
-				if (valueTable[i] == value)
-					return keyTable[i];
-		} else {
-			for (int i = valueTable.length; i-- > 0; )
-				if (value.equals(valueTable[i]))
-					return keyTable[i];
+	public K findKey (int value) {
+		final K[] keyTable = this.keyTable;
+		final int[] valueTable = this.valueTable;
+		for (int i = valueTable.length; i-- > 0; ) {
+			K key = keyTable[i];
+			if (key != null && valueTable[i] == value)
+				return key;
 		}
 		return null;
 	}
@@ -454,10 +434,10 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 		shift = Long.numberOfLeadingZeros(mask);
 
 		K[] oldKeyTable = keyTable;
-		V[] oldValueTable = valueTable;
+		int[] oldValueTable = valueTable;
 
 		keyTable = (K[])new Object[newSize];
-		valueTable = (V[])new Object[newSize];
+		valueTable = new int[newSize];
 
 		int oldSize = size;
 		size = 0;
@@ -473,16 +453,12 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 	public int hashCode () {
 		int h = 0;
 		K[] keyTable = this.keyTable;
-		V[] valueTable = this.valueTable;
+		int[] valueTable = this.valueTable;
 		for (int i = 0, n = keyTable.length; i < n; i++) {
 			K key = keyTable[i];
 			if (key != null) {
 				h ^= key.hashCode();
-
-				V value = valueTable[i];
-				if (value != null) {
-					h += value.hashCode();
-				}
+				h += valueTable[i];
 			}
 		}
 		return h;
@@ -491,46 +467,22 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 	public boolean equals (Object obj) {
 		if (obj == this)
 			return true;
-		if (!(obj instanceof ObjectMap))
+		if (!(obj instanceof ObjectIntMap))
 			return false;
-		ObjectMap other = (ObjectMap)obj;
+		ObjectIntMap other = (ObjectIntMap)obj;
 		if (other.size != size)
 			return false;
 		K[] keyTable = this.keyTable;
-		V[] valueTable = this.valueTable;
+		int[] valueTable = this.valueTable;
 		for (int i = 0, n = keyTable.length; i < n; i++) {
 			K key = keyTable[i];
 			if (key != null) {
-				V value = valueTable[i];
-				if (value == null) {
-					if (other.get(key, dummy) != null)
-						return false;
-				} else {
-					if (!value.equals(other.get(key)))
-						return false;
-				}
+				int otherValue = other.get(key, 0);
+				if (otherValue == 0 && !other.containsKey(key))
+					return false;
+				if (otherValue != valueTable[i])
+					return false;
 			}
-		}
-		return true;
-	}
-
-	/**
-	 * Uses == for comparison of each value.
-	 */
-	public boolean equalsIdentity (Object obj) {
-		if (obj == this)
-			return true;
-		if (!(obj instanceof IdentityMap))
-			return false;
-		IdentityMap other = (IdentityMap)obj;
-		if (other.size != size)
-			return false;
-		K[] keyTable = this.keyTable;
-		V[] valueTable = this.valueTable;
-		for (int i = 0, n = keyTable.length; i < n; i++) {
-			K key = keyTable[i];
-			if (key != null && valueTable[i] != other.get(key, dummy))
-				return false;
 		}
 		return true;
 	}
@@ -550,16 +502,15 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 		if (braces)
 			buffer.append('{');
 		K[] keyTable = this.keyTable;
-		V[] valueTable = this.valueTable;
+		int[] valueTable = this.valueTable;
 		int i = keyTable.length;
 		while (i-- > 0) {
 			K key = keyTable[i];
 			if (key == null)
 				continue;
-			buffer.append(key == this ? "(this)" : key);
+			buffer.append(key);
 			buffer.append('=');
-			V value = valueTable[i];
-			buffer.append(value == this ? "(this)" : value);
+			buffer.append(valueTable[i]);
 			break;
 		}
 		while (i-- > 0) {
@@ -567,17 +518,16 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 			if (key == null)
 				continue;
 			buffer.append(separator);
-			buffer.append(key == this ? "(this)" : key);
+			buffer.append(key);
 			buffer.append('=');
-			V value = valueTable[i];
-			buffer.append(value == this ? "(this)" : value);
+			buffer.append(valueTable[i]);
 		}
 		if (braces)
 			buffer.append('}');
 		return buffer.toString();
 	}
 
-	public Entries<K, V> iterator () {
+	public Entries<K> iterator () {
 		return entries();
 	}
 
@@ -585,7 +535,7 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 	 * Returns an iterator for the entries in the map. Remove is supported. Note that the same iterator instance is returned each
 	 * time this method is called. Use the {@link Entries} constructor for nested or multithreaded iteration.
 	 */
-	public Entries<K, V> entries () {
+	public Entries<K> entries () {
 		if (entries1 == null) {
 			entries1 = new Entries(this);
 			entries2 = new Entries(this);
@@ -606,7 +556,7 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 	 * Returns an iterator for the values in the map. Remove is supported. Note that the same iterator instance is returned each
 	 * time this method is called. Use the {@link Values} constructor for nested or multithreaded iteration.
 	 */
-	public Values<V> values () {
+	public Values values () {
 		if (values1 == null) {
 			values1 = new Values(this);
 			values2 = new Values(this);
@@ -649,15 +599,15 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 			return;
 		if (keys().next() instanceof String) {
 			json.writeObjectStart("entries");
-			for (Entry<K, V> entry : entries()) {
-				json.writeValue(String.valueOf(entry.key), entry.value, null);
+			for (Entry<K> entry : entries()) {
+				json.writeValue(String.valueOf(entry.key), entry.value, Integer.class);
 			}
 			json.writeObjectEnd();
 		} else {
 			json.writeArrayStart("entries");
-			for (Entry<K, V> entry : entries()) {
+			for (Entry<K> entry : entries()) {
 				json.writeValue(entry.key, null);
-				json.writeValue(entry.value, null);
+				json.writeValue(entry.value, Integer.class);
 			}
 			json.writeArrayEnd();
 		}
@@ -669,33 +619,33 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 		JsonValue entries = jsonData.get("entries");
 		if (entries.isObject()) {
 			for (JsonValue child = entries.child; child != null; child = child.next)
-				put((K)child.name, (V)json.readValue(null, child));
+				put((K)child.name, child.asInt());
 		} else if (entries.isArray()) {
 			for (JsonValue child = entries.child; child != null; child = child.next) {
 				K key = json.readValue(null, child);
-				V value = json.readValue(null, child = child.next);
+				int value = (child = child.next).asInt();
 				put(key, value);
 			}
 		}
 	}
 
-	static public class Entry<K, V> {
+	static public class Entry<K> {
 		public K key;
-		public V value;
+		public int value;
 
 		public String toString () {
 			return key + "=" + value;
 		}
 	}
 
-	static private abstract class MapIterator<K, V, I> implements Iterable<I>, Iterator<I> {
+	static private class MapIterator<K> {
 		public boolean hasNext;
 
-		final ObjectMap<K, V> map;
+		final ObjectIntMap<K> map;
 		int nextIndex, currentIndex;
 		boolean valid = true;
 
-		public MapIterator (ObjectMap<K, V> map) {
+		public MapIterator (ObjectIntMap<K> map) {
 			this.map = map;
 			reset();
 		}
@@ -720,24 +670,24 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 		public void remove () {
 			if (currentIndex < 0)
 				throw new IllegalStateException("next must be called before remove.");
-			map.keyTable[currentIndex] = null;
-			map.valueTable[currentIndex] = null;
-			--map.size;
+			K[] keyTable = map.keyTable;
+			keyTable[currentIndex] = null;
 			currentIndex = -1;
+			map.size--;
 		}
 	}
 
-	static public class Entries<K, V> extends MapIterator<K, V, Entry<K, V>> {
-		Entry<K, V> entry = new Entry<K, V>();
+	static public class Entries<K> extends MapIterator<K> implements Iterable<Entry<K>>, Iterator<Entry<K>> {
+		Entry<K> entry = new Entry<K>();
 
-		public Entries (ObjectMap<K, V> map) {
+		public Entries (ObjectIntMap<K> map) {
 			super(map);
 		}
 
 		/**
 		 * Note the same entry instance is returned each time this method is called.
 		 */
-		public Entry<K, V> next () {
+		public Entry<K> next () {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
@@ -756,14 +706,14 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 			return hasNext;
 		}
 
-		public Entries<K, V> iterator () {
+		public Entries<K> iterator () {
 			return this;
 		}
 	}
 
-	static public class Values<V> extends MapIterator<Object, V, V> {
-		public Values (ObjectMap<?, V> map) {
-			super((ObjectMap<Object, V>)map);
+	static public class Values extends MapIterator<Object> {
+		public Values (ObjectIntMap<?> map) {
+			super((ObjectIntMap<Object>)map);
 		}
 
 		public boolean hasNext () {
@@ -772,41 +722,44 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 			return hasNext;
 		}
 
-		public V next () {
+		public int next () {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
 				throw new GdxRuntimeException("#iterator() cannot be used nested.");
-			V value = map.valueTable[nextIndex];
+			int value = map.valueTable[nextIndex];
 			currentIndex = nextIndex;
 			findNextIndex();
 			return value;
 		}
 
-		public Values<V> iterator () {
+		public Values iterator () {
 			return this;
 		}
 
 		/**
 		 * Returns a new array containing the remaining values.
 		 */
-		public Array<V> toArray () {
-			return toArray(new Array(true, map.size));
+		public IntArray toArray () {
+			IntArray array = new IntArray(true, map.size);
+			while (hasNext)
+				array.add(next());
+			return array;
 		}
 
 		/**
 		 * Adds the remaining values to the specified array.
 		 */
-		public Array<V> toArray (Array<V> array) {
+		public IntArray toArray (IntArray array) {
 			while (hasNext)
 				array.add(next());
 			return array;
 		}
 	}
 
-	static public class Keys<K> extends MapIterator<K, Object, K> {
-		public Keys (ObjectMap<K, ?> map) {
-			super((ObjectMap<K, Object>)map);
+	static public class Keys<K> extends MapIterator<K> implements Iterable<K>, Iterator<K> {
+		public Keys (ObjectIntMap<K> map) {
+			super(map);
 		}
 
 		public boolean hasNext () {

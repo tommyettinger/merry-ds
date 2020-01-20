@@ -316,7 +316,6 @@ public class ObjectSet<T> implements Json.Serializable, Iterable<T> {
 		if (loc == -1) {
 			return false;
 		}
-		T[] keyTable = this.keyTable;
 		keyTable[loc] = null;
 		--size;
 		return true;
@@ -552,14 +551,7 @@ public class ObjectSet<T> implements Json.Serializable, Iterable<T> {
 		public void remove () {
 			if (currentIndex < 0)
 				throw new IllegalStateException("next must be called before remove.");
-
-			K[] keyTable = set.keyTable;
-			int mask = set.mask;
-			keyTable[currentIndex] = null;
-//			for (int i = (currentIndex + 1) & mask; keyTable[i] != null; i = (i + 1) & mask) {
-//				keyTable[i - 1 & mask] = keyTable[i];
-//				keyTable[i] = null;
-//			}
+			set.keyTable[currentIndex] = null;
 			currentIndex = -1;
 			set.size--;
 		}
