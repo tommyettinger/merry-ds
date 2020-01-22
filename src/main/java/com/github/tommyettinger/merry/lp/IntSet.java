@@ -355,7 +355,16 @@ public class IntSet implements Json.Serializable {
 	public boolean contains (int key) {
 		if (key == 0)
 			return hasZeroValue;
-		return locateKey(key) != -1;
+		// inlined locateKey()
+		for (int i = (int)(key * 0x9E3779B97F4A7C15L >>> shift); ; i = i + 1 & mask) {
+			// empty space is available
+			if (keyTable[i] == 0) {
+				return false;
+			}
+			if (key == (keyTable[i])) {
+				return true;
+			}
+		}
 	}
 
 	public int first () {
