@@ -322,8 +322,12 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 		if (loc == -1) {
 			return null;
 		}
-		keyTable[loc] = null;
 		V oldValue = valueTable[loc];
+		while ((key = keyTable[loc + 1 & mask]) != null && (loc + 1 & mask) != place(key)) {
+			keyTable[loc] = key;
+			valueTable[loc] = valueTable[++loc & mask];
+		}
+		keyTable[loc] = null;
 		valueTable[loc] = null;
 		--size;
 		return oldValue;
@@ -720,8 +724,19 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 		public void remove () {
 			if (currentIndex < 0)
 				throw new IllegalStateException("next must be called before remove.");
-			map.keyTable[currentIndex] = null;
-			map.valueTable[currentIndex] = null;
+			K[] keyTable = map.keyTable;
+			V[] valueTable = map.valueTable;
+			int loc = currentIndex;
+			final int mask = map.mask;
+			K key;
+			while ((key = keyTable[loc + 1 & mask]) != null && (loc + 1 & mask) != map.place(key)) {
+				keyTable[loc] = key;
+				valueTable[loc] = valueTable[loc + 1 & mask];
+				++loc;
+			}
+			if(loc != currentIndex) --nextIndex;
+			keyTable[loc] = null;
+			valueTable[loc] = null;
 			--map.size;
 			currentIndex = -1;
 		}
