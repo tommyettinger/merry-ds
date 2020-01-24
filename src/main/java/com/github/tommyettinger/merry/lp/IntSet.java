@@ -295,6 +295,10 @@ public class IntSet implements Json.Serializable {
 		if (loc == -1) {
 			return false;
 		}
+		while ((key = keyTable[loc + 1 & mask]) != 0 && (loc + 1 & mask) != place(key)) {
+			keyTable[loc] = key;
+			++loc;
+		}
 		keyTable[loc] = 0;
 		--size;
 		return true;
@@ -550,6 +554,17 @@ public class IntSet implements Json.Serializable {
 				throw new IllegalStateException("next must be called before remove.");
 			} else {
 				set.keyTable[currentIndex] = 0;
+
+				int[] keyTable = set.keyTable;
+				final int mask = set.mask;
+				int loc = currentIndex;
+				int key;
+				while ((key = keyTable[loc + 1 & mask]) != 0 && (loc + 1 & mask) != set.place(key)) {
+					keyTable[loc] = key;
+					++loc;
+				}
+				if(loc != currentIndex) --nextIndex;
+				keyTable[loc] = 0;
 			}
 			currentIndex = INDEX_ILLEGAL;
 			set.size--;
