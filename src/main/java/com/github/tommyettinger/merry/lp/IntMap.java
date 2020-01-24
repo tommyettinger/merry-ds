@@ -379,15 +379,16 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 			size--;
 			return oldValue;
 		}
-
 		int loc = locateKey(key);
 		if (loc == -1) {
 			return null;
 		}
-		final int[] keyTable = this.keyTable;
-		final V[] valueTable = this.valueTable;
-		keyTable[loc] = 0;
 		V oldValue = valueTable[loc];
+		while ((key = keyTable[loc + 1 & mask]) != 0 && (loc + 1 & mask) != place(key)) {
+			keyTable[loc] = key;
+			valueTable[loc] = valueTable[++loc & mask];
+		}
+		keyTable[loc] = 0;
 		valueTable[loc] = null;
 		--size;
 		return oldValue;
@@ -821,8 +822,16 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 			} else {
 				int[] keyTable = map.keyTable;
 				V[] valueTable = map.valueTable;
-				keyTable[currentIndex] = 0;
-				valueTable[currentIndex] = null;
+				int loc = currentIndex, key;
+				final int mask = map.mask;
+				while ((key = keyTable[loc + 1 & mask]) != 0 && (loc + 1 & mask) != map.place(key)) {
+					keyTable[loc] = key;
+					valueTable[loc] = valueTable[loc + 1 & mask];
+					++loc;
+				}
+				if(loc != currentIndex) --nextIndex;
+				keyTable[loc] = 0;
+				valueTable[loc] = null;
 			}
 			currentIndex = INDEX_ILLEGAL;
 			map.size--;
@@ -910,10 +919,6 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 			while (hasNext)
 				array.add(next());
 			return array;
-		}
-
-		public void remove () {
-			super.remove();
 		}
 	}
 

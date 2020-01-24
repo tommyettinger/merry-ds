@@ -774,6 +774,10 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 		public Entries<K, V> iterator () {
 			return this;
 		}
+
+		public void remove () {
+			super.remove();
+		}
 	}
 
 	static public class Values<V> extends MapIterator<Object, V, V> {

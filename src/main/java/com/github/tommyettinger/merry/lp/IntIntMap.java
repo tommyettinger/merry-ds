@@ -380,9 +380,15 @@ public class IntIntMap implements Json.Serializable, Iterable<IntIntMap.Entry> {
 		if (loc == -1) {
 			return defaultValue;
 		}
+
+		final int oldValue = valueTable[loc];
+		while ((key = keyTable[loc + 1 & mask]) != 0 && (loc + 1 & mask) != place(key)) {
+			keyTable[loc] = key;
+			valueTable[loc] = valueTable[++loc & mask];
+		}
 		keyTable[loc] = 0;
 		--size;
-		return valueTable[loc];
+		return oldValue;
 	}
 
 	/**
@@ -737,8 +743,17 @@ public class IntIntMap implements Json.Serializable, Iterable<IntIntMap.Entry> {
 			} else if (currentIndex < 0) {
 				throw new IllegalStateException("next must be called before remove.");
 			} else {
-				int[] keyTable = map.keyTable;
-				keyTable[currentIndex] = 0;
+				final int[] keyTable = map.keyTable;
+				final int[] valueTable = map.valueTable;
+				int loc = currentIndex, key;
+				final int mask = map.mask;
+				while ((key = keyTable[loc + 1 & mask]) != 0 && (loc + 1 & mask) != map.place(key)) {
+					keyTable[loc] = key;
+					valueTable[loc] = valueTable[loc + 1 & mask];
+					++loc;
+				}
+				if(loc != currentIndex) --nextIndex;
+				keyTable[loc] = 0;
 			}
 			currentIndex = INDEX_ILLEGAL;
 			map.size--;

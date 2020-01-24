@@ -62,6 +62,8 @@ public class ExtremeCaseTest {
 	}
 	@Test public void testObjectMap()
 	{
+		IntIntMap iim = new IntIntMap();
+		iim.entries().remove();
 		ObjectMap<Malice, Integer> malices = new ObjectMap<>(4050);
 		for (int i = -1000; i < 1000; i++) {
 			malices.put(new Malice(i), i);

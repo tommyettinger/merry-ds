@@ -738,6 +738,10 @@ public class ObjectFloatMap<K> implements Json.Serializable, Iterable<ObjectFloa
 		public Entries<K> iterator () {
 			return this;
 		}
+		public void remove () {
+			super.remove();
+		}
+
 	}
 
 	static public class Values extends MapIterator<Object> {

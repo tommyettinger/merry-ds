@@ -726,6 +726,10 @@ public class ObjectIntMap<K> implements Json.Serializable, Iterable<ObjectIntMap
 		public Entries<K> iterator () {
 			return this;
 		}
+
+		public void remove () {
+			super.remove();
+		}
 	}
 
 	static public class Values extends MapIterator<Object> {
