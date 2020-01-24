@@ -339,9 +339,16 @@ public class ObjectFloatMap<K> implements Json.Serializable, Iterable<ObjectFloa
 		if (loc == -1) {
 			return defaultValue;
 		}
+		final K[] keyTable = this.keyTable;
+		final float[] valueTable = this.valueTable;
+		final float oldValue = valueTable[loc];
+		while ((key = keyTable[loc + 1 & mask]) != null && (loc + 1 & mask) != place(key)) {
+			keyTable[loc] = key;
+			valueTable[loc] = valueTable[++loc & mask];
+		}
 		keyTable[loc] = null;
 		--size;
-		return valueTable[loc];
+		return oldValue;
 	}
 
 	/**
@@ -682,9 +689,20 @@ public class ObjectFloatMap<K> implements Json.Serializable, Iterable<ObjectFloa
 		public void remove () {
 			if (currentIndex < 0)
 				throw new IllegalStateException("next must be called before remove.");
-			map.keyTable[currentIndex] = null;
+			final K[] keyTable = map.keyTable;
+			final float[] valueTable = map.valueTable;
+			int loc = currentIndex;
+			final int mask = map.mask;
+			K key;
+			while ((key = keyTable[loc + 1 & mask]) != null && (loc + 1 & mask) != map.place(key)) {
+				keyTable[loc] = key;
+				valueTable[loc] = valueTable[loc + 1 & mask];
+				++loc;
+			}
+			if(loc != currentIndex) --nextIndex;
+			keyTable[loc] = null;
+			--map.size;
 			currentIndex = -1;
-			map.size--;
 		}
 	}
 
