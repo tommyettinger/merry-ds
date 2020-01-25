@@ -166,6 +166,46 @@ public class OrderedMap<K, V> extends ObjectMap<K, V> {
 		return super.remove(keys.removeIndex(index));
 	}
 
+	/**
+	 * Changes the key {@code before} to {@code after} without changing its position in the order or its value.
+	 * Returns true if {@code after} has been added to the OrderedMap and {@code before} has been removed;
+	 * returns false if {@code after} is already present or {@code before} is not present. If you are iterating
+	 * over an OrderedMap and have an index, you should prefer {@link #alterIndex(int, Object)}, which doesn't
+	 * need to search for an index like this does and so can be faster.
+	 * @param before a key that must be present for this to succeed
+	 * @param after a key that must not be in this map for this to succeed
+	 * @return true if {@code before} was removed and {@code after} was added, false otherwise
+	 */
+	public boolean alter(K before, K after)
+	{
+		if(containsKey(after))
+			return false;
+		final int index = keys.indexOf(before, false);
+		if(index == -1)
+			return false;
+		super.put(after, super.remove(before));
+		keys.set(index, after);
+		return true;
+	}
+
+	/**
+	 * Changes the key at the given {@code index} in the order to {@code after}, without changing the ordering of other entries or
+	 * any values If {@code after} is already present, this returns false; it will also return false if {@code index} is invalid
+	 * for the size of this map. Otherwise, it returns true. Unlike {@link #alter(Object, Object)}, this operates in constant
+	 * time.
+	 * @param index the index in the order of the key to change; must be non-negative and less than {@link #size}
+	 * @param after the key that will replace the contents at {@code index}; this key must not be present for this to succeed
+	 * @return true if {@code after} successfully replaced the key at {@code index}, false otherwise
+	 */
+	public boolean alterIndex(int index, K after)
+	{
+		if(index < 0 || index >= size || containsKey(after))
+			return false;
+		super.put(after, super.remove(keys.get(index)));
+		keys.set(index, after);
+		return true;
+	}
+
 	public void clear (int maximumCapacity) {
 		keys.clear();
 		super.clear(maximumCapacity);
