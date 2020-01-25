@@ -166,6 +166,45 @@ public class OrderedSet<T> extends ObjectSet<T> {
 		return key;
 	}
 
+	/**
+	 * Changes the item {@code before} to {@code after} without changing its position in the order.
+	 * Returns true if {@code after} has been added to the OrderedSet and {@code before} has been removed;
+	 * returns false if {@code after} is already present or {@code before} is not present. If you are iterating
+	 * over an OrderedSet and have an index, you should prefer {@link #alterIndex(int, Object)}, which doesn't
+	 * need to search for an index like this does and so can be faster.
+	 * @param before an item that must be present for this to succeed
+	 * @param after an item that must not be in this set for this to succeed
+	 * @return true if {@code before} was removed and {@code after} was added, false otherwise
+	 */
+	public boolean alter(T before, T after)
+	{
+		if(contains(after))
+			return false;
+		if(!super.remove(before))
+			return false;
+		super.add(after);
+		items.set(items.indexOf(before, false), after);
+		return true;
+	}
+
+	/**
+	 * Changes the item at the given {@code index} in the order to {@code after}, without changing the ordering of other items.
+	 * If {@code after} is already present, this returns false; it will also return false if {@code index} is invalid for the size
+	 * of this set. Otherwise, it returns true. Unlike {@link #alter(Object, Object)}, this operates in constant time.
+ 	 * @param index the index in the order of the item to change; must be non-negative and less than {@link #size}
+	 * @param after the item that will replace the contents at {@code index}; this item must not be present for this to succeed
+	 * @return true if {@code after} successfully replaced the contents at {@code index}, false otherwise
+	 */
+	public boolean alterIndex(int index, T after)
+	{
+		if(index < 0 || index >= size || contains(after))
+			return false;
+		super.remove(items.get(index));
+		super.add(after);
+		items.set(index, after);
+		return true;
+	}
+
 	public void clear (int maximumCapacity) {
 		items.clear();
 		super.clear(maximumCapacity);
