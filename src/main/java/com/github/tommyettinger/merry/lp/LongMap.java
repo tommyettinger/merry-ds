@@ -20,15 +20,15 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Collections;
 import com.badlogic.gdx.utils.GdxRuntimeException;
-import com.badlogic.gdx.utils.IntArray;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonValue;
+import com.badlogic.gdx.utils.LongArray;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * An unordered map that uses int keys. This implementation uses Robin Hood Hashing with the backward-shift
+ * An unordered map that uses long keys. This implementation uses Robin Hood Hashing with the backward-shift
  * algorithm for removal, and finds space for keys using Fibonacci hashing instead of the more-common power-of-two mask.
  * Null values are allowed. No allocation is done except when growing the table size.
  * <br>
@@ -110,10 +110,10 @@ import java.util.NoSuchElementException;
  * @author Tommy Ettinger
  * @author Nathan Sweet
  */
-public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
+public class LongMap<V> implements Json.Serializable, Iterable<LongMap.Entry<V>> {
 	public int size;
 
-	private int[] keyTable;
+	private long[] keyTable;
 	private V[] valueTable;
 
 	private V zeroValue;
@@ -122,7 +122,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	private float loadFactor;
 	private int threshold;
 	/**
-	 * Used by {@link #place(int)} to bit-shift the upper bits of a {@code long} into a usable range (less than or
+	 * Used by {@link #place(long)} to bit-shift the upper bits of a {@code long} into a usable range (less than or
 	 * equal to {@link #mask}, greater than or equal to 0). If you're setting it in a subclass, this shift can be
 	 * negative, which is a convenient way to match the number of bits in mask; if mask is a 7-bit number, then a shift
 	 * of -7 will correctly shift the upper 7 bits into the lowest 7 positions. If using what this class sets, shift
@@ -130,13 +130,13 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	 * upper bits of an int to the lower bits, thanks to Java's implicit modulus on shifts.
 	 * <br>
 	 * You can also use {@link #mask} to mask the low bits of a number, which may be faster for some hashCode()s, if you
-	 * reimplement {@link #place(int)}.
+	 * reimplement {@link #place(long)}.
 	 */
 	private int shift;
 	/**
 	 * The bitmask used to contain hashCode()s to the indices that can be fit into the key array this uses. This should
 	 * always be all-1-bits in its low positions; that is, it must be a power of two minus 1. If you subclass and change
-	 * {@link #place(int)}, you may want to use this instead of {@link #shift} to isolate usable bits of a hash.
+	 * {@link #place(long)}, you may want to use this instead of {@link #shift} to isolate usable bits of a hash.
 	 */
 	private int mask;
 
@@ -147,7 +147,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	/**
 	 * Creates a new map with an initial capacity of 51 and a load factor of 0.8.
 	 */
-	public IntMap () {
+	public LongMap () {
 		this(51, 0.8f);
 	}
 
@@ -156,7 +156,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	 *
 	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two.
 	 */
-	public IntMap (int initialCapacity) {
+	public LongMap (int initialCapacity) {
 		this(initialCapacity, 0.8f);
 	}
 
@@ -166,7 +166,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	 *
 	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two.
 	 */
-	public IntMap (int initialCapacity, float loadFactor) {
+	public LongMap (int initialCapacity, float loadFactor) {
 		if (initialCapacity < 0)
 			throw new IllegalArgumentException("initialCapacity must be >= 0: " + initialCapacity);
 		if (loadFactor <= 0f || loadFactor >= 1f)
@@ -181,14 +181,14 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 		mask = initialCapacity - 1;
 		shift = Long.numberOfLeadingZeros(mask);
 
-		keyTable = new int[initialCapacity];
+		keyTable = new long[initialCapacity];
 		valueTable = (V[])new Object[initialCapacity];
 	}
 
 	/**
 	 * Creates a new map identical to the specified map.
 	 */
-	public IntMap (IntMap<? extends V> map) {
+	public LongMap (LongMap<? extends V> map) {
 		this((int)(map.keyTable.length * map.loadFactor), map.loadFactor);
 		System.arraycopy(map.keyTable, 0, keyTable, 0, map.keyTable.length);
 		System.arraycopy(map.valueTable, 0, valueTable, 0, map.valueTable.length);
@@ -199,7 +199,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 
 	/**
 	 * Finds an array index between 0 and {@link #mask}, both inclusive, corresponding to the hash code of {@code item}.
-	 * By default, this uses "Fibonacci Hashing" on the int {@code item} directly; this multiplies
+	 * By default, this uses "Fibonacci Hashing" on the long {@code item} with mixed upper and lower bits; this multiplies
 	 * {@code item} by a long constant (2 to the 64, divided by the golden ratio) and shifts the high-quality
 	 * uppermost bits into the lowest positions so they can be used as array indices. The multiplication by a long may
 	 * be somewhat slow on GWT, but it will be correct across all platforms and won't lose precision. Using Fibonacci
@@ -208,23 +208,23 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	 * multiples of larger Fibonacci numbers; see <a href="https://probablydance.com/2018/06/16/fibonacci-hashing-the-optimization-that-the-world-forgot-or-a-better-alternative-to-integer-modulo/">this blog post by Malte Skarupke</a>
 	 * for more details. In the unlikely event that most of your hashCode()s are Fibonacci numbers, you can subclass
 	 * this to change this method, which is a one-liner in this form:
-	 * {@code return (int) (item * 0x9E3779B97F4A7C15L >>> shift);}
+	 * {@code return (int) ((item ^ item >>> 32) * 0x9E3779B97F4A7C15L >>> shift);}
 	 * <br>
 	 * This can be overridden by subclasses, which you may want to do if your key type needs special consideration for
 	 * its hash (such as if you use arrays as keys, which still requires that the arrays are not modified). Subclasses
 	 * that don't need the collision decrease of Fibonacci Hashing (assuming the keys are well-distributed) may do
 	 * fine with a simple implementation:
-	 * {@code return (item & mask);}
+	 * {@code return ((int)(item ^ item >>> 32) & mask);}
 	 *
 	 * @param item a key that this method will use to get a hashed position
 	 * @return an int between 0 and {@link #mask}, both inclusive
 	 */
-	private int place (final int item) {
+	private int place (final long item) {
 		// shift is always greater than 32, less than 64
-		return (int)(item * 0x9E3779B97F4A7C15L >>> shift);
+		return (int)((item ^ item >>> 32) * 0x9E3779B97F4A7C15L >>> shift);
 	}
 
-	private int locateKey (final int key) {
+	private int locateKey (final long key) {
 		return locateKey(key, place(key));
 	}
 
@@ -234,10 +234,10 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	 * equality differently than just by using == with int keys, but only within the same package.
 	 *
 	 * @param key       a K key that will be checked for equality if a similar-seeming key is found
-	 * @param placement as calculated by {@link #place(int)}, almost always with {@code place(key)}
+	 * @param placement as calculated by {@link #place(long)}, almost always with {@code place(key)}
 	 * @return the location in the key array of key, if found, or -1 if it was not found.
 	 */
-	private int locateKey (final int key, final int placement) {
+	private int locateKey (final long key, final int placement) {
 		for (int i = placement; ; i = i + 1 & mask) {
 			// empty space is available
 			if (keyTable[i] == 0) {
@@ -249,7 +249,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 		}
 	}
 
-	public V put (int key, V value) {
+	public V put (long key, V value) {
 		if (key == 0) {
 			V oldValue = zeroValue;
 			zeroValue = value;
@@ -268,7 +268,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 			valueTable[loc] = value;
 			return tv;
 		}
-		final int[] keyTable = this.keyTable;
+		final long[] keyTable = this.keyTable;
 		final V[] valueTable = this.valueTable;
 
 		for (int i = b; ; i = (i + 1) & mask) {
@@ -286,13 +286,13 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 		// never reached
 	}
 
-	public void putAll (IntMap<? extends V> map) {
+	public void putAll (LongMap<? extends V> map) {
 		ensureCapacity(map.size);
 		if (map.hasZeroValue)
 			put(0, map.zeroValue);
-		final int[] keyTable = map.keyTable;
+		final long[] keyTable = map.keyTable;
 		final V[] valueTable = map.valueTable;
-		int k;
+		long k;
 		for (int i = 0, n = keyTable.length; i < n; i++) {
 			if ((k = keyTable[i]) != 0)
 				put(k, valueTable[i]);
@@ -306,7 +306,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	/**
 	 * Skips checks for existing keys.
 	 */
-	private void putResize (int key, V value) {
+	private void putResize (long key, V value) {
 		if (key == 0) {
 			zeroValue = value;
 			if (!hasZeroValue) {
@@ -315,7 +315,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 			}
 			return;
 		}
-		final int[] keyTable = this.keyTable;
+		final long[] keyTable = this.keyTable;
 		final V[] valueTable = this.valueTable;
 		int b = place(key);
 		for (int i = b; ; i = (i + 1) & mask) {
@@ -332,7 +332,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 		}
 	}
 
-	public V get (int key) {
+	public V get (long key) {
 		if (key == 0) {
 			if (!hasZeroValue)
 				return null;
@@ -350,7 +350,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 		}
 	}
 
-	public V get (int key, V defaultValue) {
+	public V get (long key, V defaultValue) {
 		if (key == 0) {
 			if (!hasZeroValue)
 				return defaultValue;
@@ -368,7 +368,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 		}
 	}
 
-	public V remove (int key) {
+	public V remove (long key) {
 		if (key == 0) {
 			if (!hasZeroValue)
 				return null;
@@ -378,12 +378,15 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 			size--;
 			return oldValue;
 		}
+
 		int loc = locateKey(key);
 		if (loc == -1) {
 			return null;
 		}
+		final long[] keyTable = this.keyTable;
+		final V[] valueTable = this.valueTable;
 		V oldValue = valueTable[loc];
-		while ((key = keyTable[loc + 1 & mask]) != 0 && (loc + 1 & mask) != place(key)) {
+		while ((key = keyTable[loc + 1 & mask]) != 0L && (loc + 1 & mask) != place(key)) {
 			keyTable[loc] = key;
 			valueTable[loc] = valueTable[++loc & mask];
 		}
@@ -438,7 +441,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	public void clear () {
 		if (size == 0)
 			return;
-		final int[] keyTable = this.keyTable;
+		final long[] keyTable = this.keyTable;
 		final V[] valueTable = this.valueTable;
 		for (int i = keyTable.length; i > 0; ) {
 			keyTable[--i] = 0;
@@ -461,7 +464,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 		if (value == null) {
 			if (hasZeroValue && zeroValue == null)
 				return true;
-			int[] keyTable = this.keyTable;
+			long[] keyTable = this.keyTable;
 			for (int i = valueTable.length; i-- > 0; )
 				if (keyTable[i] != 0 && valueTable[i] == null)
 					return true;
@@ -482,7 +485,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 
 	}
 
-	public boolean containsKey (int key) {
+	public boolean containsKey (long key) {
 		if (key == 0)
 			return hasZeroValue;
 		return locateKey(key) != -1;
@@ -495,12 +498,12 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	 * @param identity If true, uses == to compare the specified value with values in the map. If false, uses
 	 *                 {@link #equals(Object)}.
 	 */
-	public int findKey (Object value, boolean identity, int notFound) {
+	public long findKey (Object value, boolean identity, long notFound) {
 		final V[] valueTable = this.valueTable;
 		if (value == null) {
 			if (hasZeroValue && zeroValue == null)
 				return 0;
-			int[] keyTable = this.keyTable;
+			long[] keyTable = this.keyTable;
 			for (int i = valueTable.length; i-- > 0; )
 				if (keyTable[i] != 0 && valueTable[i] == null)
 					return keyTable[i];
@@ -538,17 +541,17 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 		mask = newSize - 1;
 		shift = Long.numberOfLeadingZeros(mask);
 
-		final int[] oldKeyTable = keyTable;
+		final long[] oldKeyTable = keyTable;
 		final V[] oldValueTable = valueTable;
 
-		keyTable = new int[newSize];
+		keyTable = new long[newSize];
 		valueTable = (V[])new Object[newSize];
 
 		int oldSize = size;
 		size = 0;
 		if (oldSize > 0) {
 			for (int i = 0; i < oldCapacity; i++) {
-				int key = oldKeyTable[i];
+				long key = oldKeyTable[i];
 				if (key != 0)
 					putResize(key, oldValueTable[i]);
 			}
@@ -556,16 +559,16 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	}
 
 	public int hashCode () {
-		int h = size;
+		int h = 0;
 		if (hasZeroValue && zeroValue != null) {
 			h = zeroValue.hashCode();
 		}
-		int[] keyTable = this.keyTable;
+		long[] keyTable = this.keyTable;
 		V[] valueTable = this.valueTable;
 		for (int i = 0, n = keyTable.length; i < n; i++) {
-			int key = keyTable[i];
+			long key = keyTable[i];
 			if (key != 0) {
-				h ^= key;
+				h ^= key ^ key >>> 32;
 				V value = valueTable[i];
 				if (value != null) {
 					h += value.hashCode();
@@ -578,9 +581,9 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	public boolean equals (Object obj) {
 		if (obj == this)
 			return true;
-		if (!(obj instanceof IntMap))
+		if (!(obj instanceof LongMap))
 			return false;
-		IntMap other = (IntMap)obj;
+		LongMap other = (LongMap)obj;
 		if (other.size != size)
 			return false;
 		if (other.hasZeroValue != hasZeroValue)
@@ -594,10 +597,10 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 					return false;
 			}
 		}
-		final int[] keyTable = this.keyTable;
+		final long[] keyTable = this.keyTable;
 		final V[] valueTable = this.valueTable;
 		for (int i = 0, n = keyTable.length; i < n; i++) {
-			int key = keyTable[i];
+			long key = keyTable[i];
 			if (key != 0) {
 				V value = valueTable[i];
 				if (value == null) {
@@ -618,19 +621,19 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	public boolean equalsIdentity (Object obj) {
 		if (obj == this)
 			return true;
-		if (!(obj instanceof IntMap))
+		if (!(obj instanceof LongMap))
 			return false;
-		IntMap other = (IntMap)obj;
+		LongMap other = (LongMap)obj;
 		if (other.size != size)
 			return false;
 		if (other.hasZeroValue != hasZeroValue)
 			return false;
 		if (hasZeroValue && zeroValue != other.zeroValue)
 			return false;
-		final int[] keyTable = this.keyTable;
+		final long[] keyTable = this.keyTable;
 		final V[] valueTable = this.valueTable;
 		for (int i = 0, n = keyTable.length; i < n; i++) {
-			int key = keyTable[i];
+			long key = keyTable[i];
 			if (key != 0 && valueTable[i] != other.get(key, ObjectMap.dummy))
 				return false;
 		}
@@ -642,7 +645,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 			return "[]";
 		StringBuilder buffer = new StringBuilder(32);
 		buffer.append('[');
-		final int[] keyTable = this.keyTable;
+		final long[] keyTable = this.keyTable;
 		final V[] valueTable = this.valueTable;
 		int i = keyTable.length;
 		if (hasZeroValue) {
@@ -650,7 +653,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 			buffer.append(zeroValue);
 		} else {
 			while (i-- > 0) {
-				int key = keyTable[i];
+				long key = keyTable[i];
 				if (key == 0)
 					continue;
 				buffer.append(key);
@@ -660,7 +663,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 			}
 		}
 		while (i-- > 0) {
-			int key = keyTable[i];
+			long key = keyTable[i];
 			if (key == 0)
 				continue;
 			buffer.append(", ");
@@ -754,7 +757,9 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	public void write (Json json) {
 		json.writeArrayStart("entries");
 		for (Entry<V> entry : entries()) {
-			json.writeValue(entry.key, Integer.class);
+			// we're working around the lack of precise 64-bit integers in JSON here
+			json.writeValue((int)(entry.key >>> 32), Integer.class);
+			json.writeValue((int)entry.key, Integer.class);
 			json.writeValue(entry.value, null);
 		}
 		json.writeArrayEnd();
@@ -762,14 +767,15 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 
 	public void read (Json json, JsonValue jsonData) {
 		for (JsonValue child = jsonData.get("entries").child; child != null; child = child.next) {
-			int key = child.asInt();
+			long key = (child.asInt() & 0xFFFFFFFFL) << 32;
+			key |= (child = child.next).asInt() & 0xFFFFFFFFL;
 			V value = json.readValue(null, child = child.next);
 			put(key, value);
 		}
 	}
 
 	static public class Entry<V> {
-		public int key;
+		public long key;
 		public V value;
 
 		public String toString () {
@@ -783,11 +789,11 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 
 		public boolean hasNext;
 
-		final IntMap<V> map;
+		final LongMap<V> map;
 		int nextIndex, currentIndex;
 		boolean valid = true;
 
-		public MapIterator (IntMap<V> map) {
+		public MapIterator (LongMap<V> map) {
 			this.map = map;
 			reset();
 		}
@@ -803,7 +809,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 
 		void findNextIndex () {
 			hasNext = false;
-			int[] keyTable = map.keyTable;
+			long[] keyTable = map.keyTable;
 			for (int n = keyTable.length; ++nextIndex < n; ) {
 				if (keyTable[nextIndex] != 0) {
 					hasNext = true;
@@ -819,9 +825,10 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 			} else if (currentIndex < 0) {
 				throw new IllegalStateException("next must be called before remove.");
 			} else {
-				int[] keyTable = map.keyTable;
-				V[] valueTable = map.valueTable;
-				int loc = currentIndex, key;
+				final long[] keyTable = map.keyTable;
+				final V[] valueTable = map.valueTable;
+				int loc = currentIndex;
+				long key;
 				final int mask = map.mask;
 				while ((key = keyTable[loc + 1 & mask]) != 0 && (loc + 1 & mask) != map.place(key)) {
 					keyTable[loc] = key;
@@ -840,7 +847,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	static public class Entries<V> extends MapIterator<V> implements Iterable<Entry<V>>, Iterator<Entry<V>> {
 		private Entry<V> entry = new Entry();
 
-		public Entries (IntMap map) {
+		public Entries (LongMap map) {
 			super(map);
 		}
 
@@ -852,7 +859,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 				throw new NoSuchElementException();
 			if (!valid)
 				throw new GdxRuntimeException("#iterator() cannot be used nested.");
-			int[] keyTable = map.keyTable;
+			long[] keyTable = map.keyTable;
 			if (nextIndex == INDEX_ZERO) {
 				entry.key = 0;
 				entry.value = map.zeroValue;
@@ -881,7 +888,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	}
 
 	static public class Values<V> extends MapIterator<V> implements Iterable<V>, Iterator<V> {
-		public Values (IntMap<V> map) {
+		public Values (LongMap<V> map) {
 			super(map);
 		}
 
@@ -919,19 +926,23 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 				array.add(next());
 			return array;
 		}
+
+		public void remove () {
+			super.remove();
+		}
 	}
 
 	static public class Keys extends MapIterator {
-		public Keys (IntMap map) {
+		public Keys (LongMap map) {
 			super(map);
 		}
 
-		public int next () {
+		public long next () {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
 				throw new GdxRuntimeException("#iterator() cannot be used nested.");
-			int key = nextIndex == INDEX_ZERO ? 0 : map.keyTable[nextIndex];
+			long key = nextIndex == INDEX_ZERO ? 0 : map.keyTable[nextIndex];
 			currentIndex = nextIndex;
 			findNextIndex();
 			return key;
@@ -940,8 +951,8 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 		/**
 		 * Returns a new array containing the remaining keys.
 		 */
-		public IntArray toArray () {
-			IntArray array = new IntArray(true, map.size);
+		public LongArray toArray () {
+			LongArray array = new LongArray(true, map.size);
 			while (hasNext)
 				array.add(next());
 			return array;
@@ -950,7 +961,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 		/**
 		 * Adds the remaining values to the specified array.
 		 */
-		public IntArray toArray (IntArray array) {
+		public LongArray toArray (LongArray array) {
 			while (hasNext)
 				array.add(next());
 			return array;

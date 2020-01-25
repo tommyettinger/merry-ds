@@ -116,7 +116,6 @@ public class IntFloatMap implements Json.Serializable, Iterable<IntFloatMap.Entr
 
 	private int[] keyTable;
 	private float[] valueTable;
-	private int[] ib;
 
 	private float zeroValue;
 	private boolean hasZeroValue;
