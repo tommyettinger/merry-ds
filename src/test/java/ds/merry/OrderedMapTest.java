@@ -15,7 +15,7 @@
  *  limitations under the License.
  */
 
-package com.github.tommyettinger.merry.lp;
+package ds.merry;
 
 import org.junit.After;
 import org.junit.Assert;

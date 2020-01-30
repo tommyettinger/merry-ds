@@ -1,4 +1,4 @@
-package com.github.tommyettinger.merry.lp;
+package ds.merry;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -47,7 +47,7 @@ public class ExtremeCaseTest {
 		Assert.assertTrue("Successfully removed item 999", malices.remove(new Malice(999)));
 		final int intendedIterations = 2000 - 8;
 		Assert.assertEquals("Size is incorrect", intendedIterations, malices.size);
-		ObjectSet.MerryObjectSetIterator<Malice> mi = malices.iterator();
+		ObjectSet.ObjectSetIterator<Malice> mi = malices.iterator();
 		int i = 0;
 		while (mi.hasNext)
 		{

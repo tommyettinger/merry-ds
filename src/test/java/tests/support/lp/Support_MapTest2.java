@@ -17,7 +17,7 @@
 
 package tests.support.lp;
 
-import com.github.tommyettinger.merry.lp.ObjectMap;
+import ds.merry.ObjectMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

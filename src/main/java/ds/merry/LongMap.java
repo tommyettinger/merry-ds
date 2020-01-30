@@ -14,106 +14,49 @@
  * limitations under the License.
  ******************************************************************************/
 
-package com.github.tommyettinger.merry.lp;
+package ds.merry;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Collections;
 import com.badlogic.gdx.utils.GdxRuntimeException;
-import com.badlogic.gdx.utils.IntArray;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonValue;
+import com.badlogic.gdx.utils.LongArray;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * An unordered map that uses int keys. This implementation uses Robin Hood Hashing with the backward-shift
- * algorithm for removal, and finds space for keys using Fibonacci hashing instead of the more-common power-of-two mask.
- * Null values are allowed. No allocation is done except when growing the table size.
+ * An unordered map where the keys are unboxed longs and values are objects. This implementation uses linear probing with the
+ * backward-shift algorithm for removal, and finds space for keys using Fibonacci hashing instead of the more-common power-of-two
+ * mask. Null keys are not allowed. No allocation is done except when growing the table size.
  * <br>
- * See <a href="https://codecapsule.com/2013/11/11/robin-hood-hashing/">Emmanuel Goossaert's blog post</a> for more
- * information on Robin Hood hashing. It isn't state-of-the art in C++ or Rust any more, but newer techniques like Swiss
- * Tables aren't applicable to the JVM anyway, and Robin Hood hashing works well here.
+ * This map uses Fibonacci hashing to help distribute what may be very bad hashCode() results across the
+ * whole capacity. See <a href="https://probablydance.com/2018/06/16/fibonacci-hashing-the-optimization-that-the-world-forgot-or-a-better-alternative-to-integer-modulo/">Malte Skarupke's blog post</a>
+ * for more information on Fibonacci hashing. It uses linear probing to resolve collisions, which is far from the academically
+ * optimal algorithm, but performs considerably better in practice than most alternatives, and combined with Fibonacci hashing, it
+ * can handle "normal" generated hashCode() implementations, and not just theoretically optimal hashing functions. Even if all
+ * hashCode()s this is given collide, it will still work, just slowly; the older libGDX implementation using cuckoo hashing would
+ * crash with an OutOfMemoryError with under 50 collisions.
  * <br>
- * See <a href="https://probablydance.com/2018/06/16/fibonacci-hashing-the-optimization-that-the-world-forgot-or-a-better-alternative-to-integer-modulo/">Malte Skarupke's blog post</a>
- * for more information on Fibonacci hashing. In the specific case of this data structure, Fibonacci hashing improves
- * protection against what are normally very bad hashCode() implementations. Generally speaking, most automatically
- * generated hashCode() implementations range from mediocre to very bad, and because library data structures can't
- * expect every hashCode() to be high-quality, it is the responsibility of the data structure to have some measure of
- * safeguard in case of frequent collisions. The JDK's HashMap class has a complex set of conditions to change how it
- * operates to counteract malicious insertions performed to deny service; this works very well unless the hashCode()
- * of keys is intentionally broken. This class uses a simpler approach. Some main approaches to using hash codes to
- * place keys in an array include:
- * <ul>
- *     <li>Prime Modulus: use a prime number for array capacity, and use modulus to wrap hashCode() into the table size</li>
- *     <li>Bitmask: use a power of two for array capacity, and get only the least significant bits of a hashCode() up
- *         until the area used is equal to capacity.</li>
- * </ul>
- * The first approach is robust, but quite slow due to modulus being needed sometimes several times per operation, and
- * modulus is one of the slowest numerical operations on ints. The second approach is widespread among fast hash
- * tables, but either requires the least significant bits to be varied between hashCode() results (the most significant
- * bits usually don't matter much), or for collisions to have some kind of extra position to place keys. The first
- * requirement is a no-go with most automatically generated hashCode()s; if a field is a float, they have to convert it
- * to a usable int via {@link Float#floatToRawIntBits(float)}, and in many cases only the most significant bits will
- * change between the results of those calls. The second is usually done by probing, where another position in the
- * array is checked to see if it's available, then another and so on until an available space is found. The second
- * requirement can also sometimes be achieved with a "stash," which stores a list of problematic keys next to the rest
- * of the keys, but if the stash gets too large, most operations on the set or map get very slow, and if the stash size
- * depends on the key array's size, then too many items going in the stash can force massive memory use. ObjectSet and
- * ObjectMap in libGDX have this last problem, and can run out of memory if their keys have poor hashCode()s. IntSet and
- * IntMap, as far as anyone has indicated, do not have this problem because they never deal with bad hashCode()s, though
- * some int keys can still cause slowdowns.
- * <br>
- * This class does things differently, though it also uses a power of two for array capacity. Fibonacci hashing
- * takes an int key, multiplies it by a specific long constant, and bitwise-shifts just enough of the most
- * significant bits of that multiplication down to the least significant area, where they are used as an index into the
- * key array. The constant has to be ((2 to the 64) divided by the golden ratio) to work effectively here, due to
- * properties of the golden ratio, and multiplying by that makes all of the bits of a 32-bit key contribute some
- * chance of changing the upper 32 bits of the multiplied product. What this means in practice, is that inserting
- * Vector2 items with just two float values (and mostly the upper bits changing in the hashCode()) goes from 11,279
- * items per second with the above Bitmask method to 2,594,801 items per second with Fibonacci hashing, <b>a 230x
- * speedup</b>. With some specific ranges of Vector2, you can crash ObjectSet with an OutOfMemoryError by inserting as
- * little as 7,040 Vector2 items, so this is a significant improvement! Fibonacci hashing also improves int keys when
- * they are not well-distributed across the full range of int values, though the difference is less stark. When using
- * keys that combine a 16-bit x and y by putting y in the upper 16 bits of a key and keeping x in the lower bits, IntMap
- * slows down a lot because it often doesn't use many upper bits, and a column with identical x values would have only
- * hash collisions in IntMap until the map resized enough to consider the upper bits of keys. Fibonacci hashing takes
- * some time, but it's worth it in this case because it avoids potentially many collisions, which would have a much
- * worse effect on performance. In one benchmark on these half-and-half int keys, IntMap gets 19.13 million keys entered
- * per second, and IntMap gets 48.82 million of the same kind of keys, about a 2.5x multiplier on throughput.
- * <br>
- * In addition to Fibonacci hashing to figure out initial placement in the key array, this uses Robin Hood hashing to
- * mitigate problems from collisions. The IntMap and IntSet classes in libGDX use Cuckoo hashing with a stash, but
- * no probing at all. This implementation probes often (though Fibonacci hashing helps) and uses linear probing (which
- * just probes the next item in the array sequentially until it finds an empty space), but can swap the locations of
- * keys. The idea here is that if a key requires particularly lengthy probes while you insert it, and it probes past a
- * key that has a lower probe length, it swaps their positions to reduce the maximum probe length (which helps other
- * operations too). This swapping behavior acts like "stealing from the rich" (keys with low probe lengths) to "give to
- * the poor" (keys with unusually long probe lengths), hence the Robin Hood title.
- * <br>
- * The name "Merry" was picked because Robin Hood has a band of Merry Men, "Merry" is faster to type than "RobinHood"
- * and this was written around Christmas time.
- * <br>
- * This set performs very fast contains and remove (typically O(1), worst case O(log(n))). Add may be a bit slower, depending on
- * hash collisions. Load factors greater than 0.91 greatly increase the chances the set will have to rehash to the next higher POT
- * size.
- * <br>
- * Iteration can be very slow for a set with a large capacity. {@link #clear(int)} and {@link #shrink(int)} can be used to reduce
- * the capacity. {@link OrderedMap} provides much faster iteration if you have Object keys.
+ * This map performs very fast contains and remove (typically O(1), worst case O(n) due to occasional probing, but still very
+ * fast). Add may be a bit slower, depending on hash collisions, but this data structure is somewhat collision-resistant.
+ * Load factors greater than 0.91 greatly increase the chances the map will have to rehash to the next higher POT size.
  * <br>
  * The <a href="http://codecapsule.com/2013/11/17/robin-hood-hashing-backward-shift-deletion/">backward-shift algorithm</a>
- * used during removal apparently is key to the good performance of this implementation. Thanks to Maksym Stepanenko,
- * who wrote a similar class that provided valuable insight into how Robin Hood hashing works in Java:
- * <a href="https://github.com/mstepan/algorithms/blob/master/src/main/java/com/max/algs/hashing/robin_hood/RobinHoodHashMap.java">Maksym's code is here</a>.
+ * used during removal apparently is key to the good performance of this implementation, even though this doesn't use Robin Hood
+ * hashing; the performance of {@link #remove(long)} has improved considerably over the previous libGDX version.
+ * <br>
+ * Iteration won't be as fast here as with OrderedSet and OrderedMap.
  *
  * @author Tommy Ettinger
  * @author Nathan Sweet
  */
-public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
+public class LongMap<V> implements Json.Serializable, Iterable<LongMap.Entry<V>> {
 	public int size;
 
-	private int[] keyTable;
+	private long[] keyTable;
 	private V[] valueTable;
 
 	private V zeroValue;
@@ -122,7 +65,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	private float loadFactor;
 	private int threshold;
 	/**
-	 * Used by {@link #place(int)} to bit-shift the upper bits of a {@code long} into a usable range (less than or
+	 * Used by {@link #place(long)} to bit-shift the upper bits of a {@code long} into a usable range (less than or
 	 * equal to {@link #mask}, greater than or equal to 0). If you're setting it in a subclass, this shift can be
 	 * negative, which is a convenient way to match the number of bits in mask; if mask is a 7-bit number, then a shift
 	 * of -7 will correctly shift the upper 7 bits into the lowest 7 positions. If using what this class sets, shift
@@ -130,13 +73,13 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	 * upper bits of an int to the lower bits, thanks to Java's implicit modulus on shifts.
 	 * <br>
 	 * You can also use {@link #mask} to mask the low bits of a number, which may be faster for some hashCode()s, if you
-	 * reimplement {@link #place(int)}.
+	 * reimplement {@link #place(long)}.
 	 */
 	private int shift;
 	/**
 	 * The bitmask used to contain hashCode()s to the indices that can be fit into the key array this uses. This should
 	 * always be all-1-bits in its low positions; that is, it must be a power of two minus 1. If you subclass and change
-	 * {@link #place(int)}, you may want to use this instead of {@link #shift} to isolate usable bits of a hash.
+	 * {@link #place(long)}, you may want to use this instead of {@link #shift} to isolate usable bits of a hash.
 	 */
 	private int mask;
 
@@ -147,7 +90,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	/**
 	 * Creates a new map with an initial capacity of 51 and a load factor of 0.8.
 	 */
-	public IntMap () {
+	public LongMap () {
 		this(51, 0.8f);
 	}
 
@@ -156,7 +99,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	 *
 	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two.
 	 */
-	public IntMap (int initialCapacity) {
+	public LongMap (int initialCapacity) {
 		this(initialCapacity, 0.8f);
 	}
 
@@ -166,7 +109,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	 *
 	 * @param initialCapacity If not a power of two, it is increased to the next nearest power of two.
 	 */
-	public IntMap (int initialCapacity, float loadFactor) {
+	public LongMap (int initialCapacity, float loadFactor) {
 		if (initialCapacity < 0)
 			throw new IllegalArgumentException("initialCapacity must be >= 0: " + initialCapacity);
 		if (loadFactor <= 0f || loadFactor >= 1f)
@@ -181,14 +124,14 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 		mask = initialCapacity - 1;
 		shift = Long.numberOfLeadingZeros(mask);
 
-		keyTable = new int[initialCapacity];
+		keyTable = new long[initialCapacity];
 		valueTable = (V[])new Object[initialCapacity];
 	}
 
 	/**
 	 * Creates a new map identical to the specified map.
 	 */
-	public IntMap (IntMap<? extends V> map) {
+	public LongMap (LongMap<? extends V> map) {
 		this((int)(map.keyTable.length * map.loadFactor), map.loadFactor);
 		System.arraycopy(map.keyTable, 0, keyTable, 0, map.keyTable.length);
 		System.arraycopy(map.valueTable, 0, valueTable, 0, map.valueTable.length);
@@ -199,7 +142,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 
 	/**
 	 * Finds an array index between 0 and {@link #mask}, both inclusive, corresponding to the hash code of {@code item}.
-	 * By default, this uses "Fibonacci Hashing" on the int {@code item} directly; this multiplies
+	 * By default, this uses "Fibonacci Hashing" on the long {@code item} with mixed upper and lower bits; this multiplies
 	 * {@code item} by a long constant (2 to the 64, divided by the golden ratio) and shifts the high-quality
 	 * uppermost bits into the lowest positions so they can be used as array indices. The multiplication by a long may
 	 * be somewhat slow on GWT, but it will be correct across all platforms and won't lose precision. Using Fibonacci
@@ -208,23 +151,23 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	 * multiples of larger Fibonacci numbers; see <a href="https://probablydance.com/2018/06/16/fibonacci-hashing-the-optimization-that-the-world-forgot-or-a-better-alternative-to-integer-modulo/">this blog post by Malte Skarupke</a>
 	 * for more details. In the unlikely event that most of your hashCode()s are Fibonacci numbers, you can subclass
 	 * this to change this method, which is a one-liner in this form:
-	 * {@code return (int) (item * 0x9E3779B97F4A7C15L >>> shift);}
+	 * {@code return (int) ((item ^ item >>> 32) * 0x9E3779B97F4A7C15L >>> shift);}
 	 * <br>
 	 * This can be overridden by subclasses, which you may want to do if your key type needs special consideration for
 	 * its hash (such as if you use arrays as keys, which still requires that the arrays are not modified). Subclasses
 	 * that don't need the collision decrease of Fibonacci Hashing (assuming the keys are well-distributed) may do
 	 * fine with a simple implementation:
-	 * {@code return (item & mask);}
+	 * {@code return ((int)(item ^ item >>> 32) & mask);}
 	 *
 	 * @param item a key that this method will use to get a hashed position
 	 * @return an int between 0 and {@link #mask}, both inclusive
 	 */
-	private int place (final int item) {
+	private int place (final long item) {
 		// shift is always greater than 32, less than 64
-		return (int)(item * 0x9E3779B97F4A7C15L >>> shift);
+		return (int)((item ^ item >>> 32) * 0x9E3779B97F4A7C15L >>> shift);
 	}
 
-	private int locateKey (final int key) {
+	private int locateKey (final long key) {
 		return locateKey(key, place(key));
 	}
 
@@ -234,10 +177,10 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	 * equality differently than just by using == with int keys, but only within the same package.
 	 *
 	 * @param key       a K key that will be checked for equality if a similar-seeming key is found
-	 * @param placement as calculated by {@link #place(int)}, almost always with {@code place(key)}
+	 * @param placement as calculated by {@link #place(long)}, almost always with {@code place(key)}
 	 * @return the location in the key array of key, if found, or -1 if it was not found.
 	 */
-	private int locateKey (final int key, final int placement) {
+	private int locateKey (final long key, final int placement) {
 		for (int i = placement; ; i = i + 1 & mask) {
 			// empty space is available
 			if (keyTable[i] == 0) {
@@ -249,7 +192,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 		}
 	}
 
-	public V put (int key, V value) {
+	public V put (long key, V value) {
 		if (key == 0) {
 			V oldValue = zeroValue;
 			zeroValue = value;
@@ -268,7 +211,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 			valueTable[loc] = value;
 			return tv;
 		}
-		final int[] keyTable = this.keyTable;
+		final long[] keyTable = this.keyTable;
 		final V[] valueTable = this.valueTable;
 
 		for (int i = b; ; i = (i + 1) & mask) {
@@ -286,13 +229,13 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 		// never reached
 	}
 
-	public void putAll (IntMap<? extends V> map) {
+	public void putAll (LongMap<? extends V> map) {
 		ensureCapacity(map.size);
 		if (map.hasZeroValue)
 			put(0, map.zeroValue);
-		final int[] keyTable = map.keyTable;
+		final long[] keyTable = map.keyTable;
 		final V[] valueTable = map.valueTable;
-		int k;
+		long k;
 		for (int i = 0, n = keyTable.length; i < n; i++) {
 			if ((k = keyTable[i]) != 0)
 				put(k, valueTable[i]);
@@ -306,7 +249,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	/**
 	 * Skips checks for existing keys.
 	 */
-	private void putResize (int key, V value) {
+	private void putResize (long key, V value) {
 		if (key == 0) {
 			zeroValue = value;
 			if (!hasZeroValue) {
@@ -315,7 +258,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 			}
 			return;
 		}
-		final int[] keyTable = this.keyTable;
+		final long[] keyTable = this.keyTable;
 		final V[] valueTable = this.valueTable;
 		int b = place(key);
 		for (int i = b; ; i = (i + 1) & mask) {
@@ -332,7 +275,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 		}
 	}
 
-	public V get (int key) {
+	public V get (long key) {
 		if (key == 0) {
 			if (!hasZeroValue)
 				return null;
@@ -350,7 +293,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 		}
 	}
 
-	public V get (int key, V defaultValue) {
+	public V get (long key, V defaultValue) {
 		if (key == 0) {
 			if (!hasZeroValue)
 				return defaultValue;
@@ -368,7 +311,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 		}
 	}
 
-	public V remove (int key) {
+	public V remove (long key) {
 		if (key == 0) {
 			if (!hasZeroValue)
 				return null;
@@ -378,12 +321,15 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 			size--;
 			return oldValue;
 		}
+
 		int loc = locateKey(key);
 		if (loc == -1) {
 			return null;
 		}
+		final long[] keyTable = this.keyTable;
+		final V[] valueTable = this.valueTable;
 		V oldValue = valueTable[loc];
-		while ((key = keyTable[loc + 1 & mask]) != 0 && (loc + 1 & mask) != place(key)) {
+		while ((key = keyTable[loc + 1 & mask]) != 0L && (loc + 1 & mask) != place(key)) {
 			keyTable[loc] = key;
 			valueTable[loc] = valueTable[++loc & mask];
 		}
@@ -438,7 +384,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	public void clear () {
 		if (size == 0)
 			return;
-		final int[] keyTable = this.keyTable;
+		final long[] keyTable = this.keyTable;
 		final V[] valueTable = this.valueTable;
 		for (int i = keyTable.length; i > 0; ) {
 			keyTable[--i] = 0;
@@ -461,7 +407,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 		if (value == null) {
 			if (hasZeroValue && zeroValue == null)
 				return true;
-			int[] keyTable = this.keyTable;
+			long[] keyTable = this.keyTable;
 			for (int i = valueTable.length; i-- > 0; )
 				if (keyTable[i] != 0 && valueTable[i] == null)
 					return true;
@@ -482,7 +428,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 
 	}
 
-	public boolean containsKey (int key) {
+	public boolean containsKey (long key) {
 		if (key == 0)
 			return hasZeroValue;
 		return locateKey(key) != -1;
@@ -495,12 +441,12 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	 * @param identity If true, uses == to compare the specified value with values in the map. If false, uses
 	 *                 {@link #equals(Object)}.
 	 */
-	public int findKey (Object value, boolean identity, int notFound) {
+	public long findKey (Object value, boolean identity, long notFound) {
 		final V[] valueTable = this.valueTable;
 		if (value == null) {
 			if (hasZeroValue && zeroValue == null)
 				return 0;
-			int[] keyTable = this.keyTable;
+			long[] keyTable = this.keyTable;
 			for (int i = valueTable.length; i-- > 0; )
 				if (keyTable[i] != 0 && valueTable[i] == null)
 					return keyTable[i];
@@ -538,17 +484,17 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 		mask = newSize - 1;
 		shift = Long.numberOfLeadingZeros(mask);
 
-		final int[] oldKeyTable = keyTable;
+		final long[] oldKeyTable = keyTable;
 		final V[] oldValueTable = valueTable;
 
-		keyTable = new int[newSize];
+		keyTable = new long[newSize];
 		valueTable = (V[])new Object[newSize];
 
 		int oldSize = size;
 		size = 0;
 		if (oldSize > 0) {
 			for (int i = 0; i < oldCapacity; i++) {
-				int key = oldKeyTable[i];
+				long key = oldKeyTable[i];
 				if (key != 0)
 					putResize(key, oldValueTable[i]);
 			}
@@ -556,16 +502,16 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	}
 
 	public int hashCode () {
-		int h = size;
+		int h = 0;
 		if (hasZeroValue && zeroValue != null) {
 			h = zeroValue.hashCode();
 		}
-		int[] keyTable = this.keyTable;
+		long[] keyTable = this.keyTable;
 		V[] valueTable = this.valueTable;
 		for (int i = 0, n = keyTable.length; i < n; i++) {
-			int key = keyTable[i];
+			long key = keyTable[i];
 			if (key != 0) {
-				h ^= key;
+				h ^= key ^ key >>> 32;
 				V value = valueTable[i];
 				if (value != null) {
 					h += value.hashCode();
@@ -578,9 +524,9 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	public boolean equals (Object obj) {
 		if (obj == this)
 			return true;
-		if (!(obj instanceof IntMap))
+		if (!(obj instanceof LongMap))
 			return false;
-		IntMap other = (IntMap)obj;
+		LongMap other = (LongMap)obj;
 		if (other.size != size)
 			return false;
 		if (other.hasZeroValue != hasZeroValue)
@@ -594,10 +540,10 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 					return false;
 			}
 		}
-		final int[] keyTable = this.keyTable;
+		final long[] keyTable = this.keyTable;
 		final V[] valueTable = this.valueTable;
 		for (int i = 0, n = keyTable.length; i < n; i++) {
-			int key = keyTable[i];
+			long key = keyTable[i];
 			if (key != 0) {
 				V value = valueTable[i];
 				if (value == null) {
@@ -618,19 +564,19 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	public boolean equalsIdentity (Object obj) {
 		if (obj == this)
 			return true;
-		if (!(obj instanceof IntMap))
+		if (!(obj instanceof LongMap))
 			return false;
-		IntMap other = (IntMap)obj;
+		LongMap other = (LongMap)obj;
 		if (other.size != size)
 			return false;
 		if (other.hasZeroValue != hasZeroValue)
 			return false;
 		if (hasZeroValue && zeroValue != other.zeroValue)
 			return false;
-		final int[] keyTable = this.keyTable;
+		final long[] keyTable = this.keyTable;
 		final V[] valueTable = this.valueTable;
 		for (int i = 0, n = keyTable.length; i < n; i++) {
-			int key = keyTable[i];
+			long key = keyTable[i];
 			if (key != 0 && valueTable[i] != other.get(key, ObjectMap.dummy))
 				return false;
 		}
@@ -642,7 +588,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 			return "[]";
 		StringBuilder buffer = new StringBuilder(32);
 		buffer.append('[');
-		final int[] keyTable = this.keyTable;
+		final long[] keyTable = this.keyTable;
 		final V[] valueTable = this.valueTable;
 		int i = keyTable.length;
 		if (hasZeroValue) {
@@ -650,7 +596,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 			buffer.append(zeroValue);
 		} else {
 			while (i-- > 0) {
-				int key = keyTable[i];
+				long key = keyTable[i];
 				if (key == 0)
 					continue;
 				buffer.append(key);
@@ -660,7 +606,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 			}
 		}
 		while (i-- > 0) {
-			int key = keyTable[i];
+			long key = keyTable[i];
 			if (key == 0)
 				continue;
 			buffer.append(", ");
@@ -754,7 +700,9 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	public void write (Json json) {
 		json.writeArrayStart("entries");
 		for (Entry<V> entry : entries()) {
-			json.writeValue(entry.key, Integer.class);
+			// we're working around the lack of precise 64-bit integers in JSON here
+			json.writeValue((int)(entry.key >>> 32), Integer.class);
+			json.writeValue((int)entry.key, Integer.class);
 			json.writeValue(entry.value, null);
 		}
 		json.writeArrayEnd();
@@ -762,14 +710,15 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 
 	public void read (Json json, JsonValue jsonData) {
 		for (JsonValue child = jsonData.get("entries").child; child != null; child = child.next) {
-			int key = child.asInt();
+			long key = (child.asInt() & 0xFFFFFFFFL) << 32;
+			key |= (child = child.next).asInt() & 0xFFFFFFFFL;
 			V value = json.readValue(null, child = child.next);
 			put(key, value);
 		}
 	}
 
 	static public class Entry<V> {
-		public int key;
+		public long key;
 		public V value;
 
 		public String toString () {
@@ -783,11 +732,11 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 
 		public boolean hasNext;
 
-		final IntMap<V> map;
+		final LongMap<V> map;
 		int nextIndex, currentIndex;
 		boolean valid = true;
 
-		public MapIterator (IntMap<V> map) {
+		public MapIterator (LongMap<V> map) {
 			this.map = map;
 			reset();
 		}
@@ -803,7 +752,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 
 		void findNextIndex () {
 			hasNext = false;
-			int[] keyTable = map.keyTable;
+			long[] keyTable = map.keyTable;
 			for (int n = keyTable.length; ++nextIndex < n; ) {
 				if (keyTable[nextIndex] != 0) {
 					hasNext = true;
@@ -819,9 +768,10 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 			} else if (currentIndex < 0) {
 				throw new IllegalStateException("next must be called before remove.");
 			} else {
-				int[] keyTable = map.keyTable;
-				V[] valueTable = map.valueTable;
-				int loc = currentIndex, key;
+				final long[] keyTable = map.keyTable;
+				final V[] valueTable = map.valueTable;
+				int loc = currentIndex;
+				long key;
 				final int mask = map.mask;
 				while ((key = keyTable[loc + 1 & mask]) != 0 && (loc + 1 & mask) != map.place(key)) {
 					keyTable[loc] = key;
@@ -840,7 +790,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	static public class Entries<V> extends MapIterator<V> implements Iterable<Entry<V>>, Iterator<Entry<V>> {
 		private Entry<V> entry = new Entry();
 
-		public Entries (IntMap map) {
+		public Entries (LongMap map) {
 			super(map);
 		}
 
@@ -852,7 +802,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 				throw new NoSuchElementException();
 			if (!valid)
 				throw new GdxRuntimeException("#iterator() cannot be used nested.");
-			int[] keyTable = map.keyTable;
+			long[] keyTable = map.keyTable;
 			if (nextIndex == INDEX_ZERO) {
 				entry.key = 0;
 				entry.value = map.zeroValue;
@@ -881,7 +831,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 	}
 
 	static public class Values<V> extends MapIterator<V> implements Iterable<V>, Iterator<V> {
-		public Values (IntMap<V> map) {
+		public Values (LongMap<V> map) {
 			super(map);
 		}
 
@@ -919,19 +869,23 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 				array.add(next());
 			return array;
 		}
+
+		public void remove () {
+			super.remove();
+		}
 	}
 
 	static public class Keys extends MapIterator {
-		public Keys (IntMap map) {
+		public Keys (LongMap map) {
 			super(map);
 		}
 
-		public int next () {
+		public long next () {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
 				throw new GdxRuntimeException("#iterator() cannot be used nested.");
-			int key = nextIndex == INDEX_ZERO ? 0 : map.keyTable[nextIndex];
+			long key = nextIndex == INDEX_ZERO ? 0 : map.keyTable[nextIndex];
 			currentIndex = nextIndex;
 			findNextIndex();
 			return key;
@@ -940,8 +894,8 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 		/**
 		 * Returns a new array containing the remaining keys.
 		 */
-		public IntArray toArray () {
-			IntArray array = new IntArray(true, map.size);
+		public LongArray toArray () {
+			LongArray array = new LongArray(true, map.size);
 			while (hasNext)
 				array.add(next());
 			return array;
@@ -950,7 +904,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 		/**
 		 * Adds the remaining values to the specified array.
 		 */
-		public IntArray toArray (IntArray array) {
+		public LongArray toArray (LongArray array) {
 			while (hasNext)
 				array.add(next());
 			return array;
