@@ -21,7 +21,6 @@ import com.badlogic.gdx.utils.Array;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import tests.support.lp.Support_MapTest2;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;

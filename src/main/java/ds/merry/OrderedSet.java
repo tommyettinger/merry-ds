@@ -40,6 +40,7 @@ import java.util.NoSuchElementException;
  * This set performs very fast contains and remove (typically O(1), worst case O(n) due to moving items in an Array, but still
  * very fast). Add may be a bit slower, depending on hash collisions, but this data structure is somewhat collision-resistant.
  * Load factors greater than 0.91 greatly increase the chances the set will have to rehash to the next higher POT size.
+ * Memory usage is excellent, and the aforementioned collision-resistance helps avoid too much capacity resizing.
  * <br>
  * The <a href="http://codecapsule.com/2013/11/17/robin-hood-hashing-backward-shift-deletion/">backward-shift algorithm</a>
  * used during removal apparently is key to the good performance of this implementation, even though this doesn't use Robin Hood

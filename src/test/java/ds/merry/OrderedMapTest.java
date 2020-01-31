@@ -21,7 +21,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import tests.support.lp.Support_MapTest2;
 
 import java.util.ArrayList;
 import java.util.Arrays;
