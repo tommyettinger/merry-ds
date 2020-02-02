@@ -503,7 +503,7 @@ public class LongMap<V> implements Json.Serializable, Iterable<LongMap.Entry<V>>
 	}
 
 	public int hashCode () {
-		int h = 0;
+		int h = size;
 		if (hasZeroValue && zeroValue != null) {
 			h = zeroValue.hashCode();
 		}

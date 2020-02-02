@@ -461,7 +461,7 @@ public class IntIntMap implements Json.Serializable, Iterable<IntIntMap.Entry> {
 	}
 
 	public int hashCode () {
-		int h = 0;
+		int h = size;
 		if (hasZeroValue) {
 			h += zeroValue;
 		}

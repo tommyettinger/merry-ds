@@ -429,7 +429,7 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 	}
 
 	public int hashCode () {
-		int h = 0;
+		int h = size;
 		K[] keyTable = this.keyTable;
 		V[] valueTable = this.valueTable;
 		for (int i = 0, n = keyTable.length; i < n; i++) {

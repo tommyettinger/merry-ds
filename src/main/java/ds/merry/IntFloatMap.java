@@ -466,7 +466,7 @@ public class IntFloatMap implements Json.Serializable, Iterable<IntFloatMap.Entr
 	}
 
 	public int hashCode () {
-		int h = 0;
+		int h = size;
 		if (hasZeroValue) {
 			h += NumberUtils.floatToRawIntBits(zeroValue);
 		}
