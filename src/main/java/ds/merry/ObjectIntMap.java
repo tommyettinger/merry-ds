@@ -238,8 +238,7 @@ public class ObjectIntMap<K> implements Json.Serializable, Iterable<ObjectIntMap
 	private void putResize (K key, int value) {
 		K[] keyTable = this.keyTable;
 		int[] valueTable = this.valueTable;
-		int b = place(key);
-		for (int i = b; ; i = (i + 1) & mask) {
+		for (int i = place(key); ; i = (i + 1) & mask) {
 			// space is available so we insert and break (resize is later)
 			if (keyTable[i] == null) {
 				keyTable[i] = key;
@@ -285,9 +284,12 @@ public class ObjectIntMap<K> implements Json.Serializable, Iterable<ObjectIntMap
 		final K[] keyTable = this.keyTable;
 		final int[] valueTable = this.valueTable;
 		final int oldValue = valueTable[loc];
-		while ((key = keyTable[loc + 1 & mask]) != null && (loc + 1 & mask) != place(key)) {
+		int nl = (loc + 1 & mask);
+		while ((key = keyTable[nl]) != null && nl != place(key)) {
 			keyTable[loc] = key;
-			valueTable[loc] = valueTable[++loc & mask];
+			valueTable[loc] = valueTable[nl];
+			loc = nl;
+			nl = loc + 1 & mask;
 		}
 		keyTable[loc] = null;
 		--size;
@@ -631,13 +633,14 @@ public class ObjectIntMap<K> implements Json.Serializable, Iterable<ObjectIntMap
 				throw new IllegalStateException("next must be called before remove.");
 			final K[] keyTable = map.keyTable;
 			final int[] valueTable = map.valueTable;
-			int loc = currentIndex;
 			final int mask = map.mask;
+			int loc = currentIndex, nl = (loc + 1 & mask);
 			K key;
-			while ((key = keyTable[loc + 1 & mask]) != null && (loc + 1 & mask) != map.place(key)) {
+			while ((key = keyTable[nl]) != null && nl != map.place(key)) {
 				keyTable[loc] = key;
-				valueTable[loc] = valueTable[loc + 1 & mask];
-				++loc;
+				valueTable[loc] = valueTable[nl];
+				loc = nl;
+				nl = loc + 1 & mask;
 			}
 			if(loc != currentIndex) --nextIndex;
 			keyTable[loc] = null;

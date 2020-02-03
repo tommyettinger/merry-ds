@@ -249,8 +249,7 @@ public class ObjectSet<T> implements Json.Serializable, Iterable<T> {
 	 */
 	private void addResize (T key) {
 		T[] keyTable = this.keyTable;
-		int b = place(key);
-		for (int i = b; ; i = (i + 1) & mask) {
+		for (int i = place(key); ; i = (i + 1) & mask) {
 			// space is available so we insert and break (resize is later)
 			if (keyTable[i] == null) {
 				keyTable[i] = key;
@@ -270,9 +269,12 @@ public class ObjectSet<T> implements Json.Serializable, Iterable<T> {
 		if (loc == -1) {
 			return false;
 		}
-		while ((key = keyTable[loc + 1 & mask]) != null && (loc + 1 & mask) != place(key)) {
+
+		int nl = (loc + 1 & mask);
+		while ((key = keyTable[nl]) != null && nl != place(key)) {
 			keyTable[loc] = key;
-			++loc;
+			loc = nl;
+			nl = loc + 1 & mask;
 		}
 		keyTable[loc] = null;
 		--size;
@@ -512,11 +514,12 @@ public class ObjectSet<T> implements Json.Serializable, Iterable<T> {
 
 			K[] keyTable = set.keyTable;
 			final int mask = set.mask;
-			int loc = currentIndex;
+			int loc = currentIndex, nl = (loc + 1 & mask);
 			K key;
-			while ((key = keyTable[loc + 1 & mask]) != null && (loc + 1 & mask) != set.place(key)) {
+			while ((key = keyTable[nl]) != null && nl != set.place(key)) {
 				keyTable[loc] = key;
-				++loc;
+				loc = nl;
+				nl = loc + 1 & mask;
 			}
 			if(loc != currentIndex) --nextIndex;
 			keyTable[loc] = null;

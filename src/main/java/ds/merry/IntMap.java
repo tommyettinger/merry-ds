@@ -261,8 +261,7 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 		}
 		final int[] keyTable = this.keyTable;
 		final V[] valueTable = this.valueTable;
-		int b = place(key);
-		for (int i = b; ; i = (i + 1) & mask) {
+		for (int i = place(key); ; i = (i + 1) & mask) {
 			// space is available so we insert and break (resize is later)
 			if (keyTable[i] == 0) {
 				keyTable[i] = key;
@@ -327,9 +326,12 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 			return null;
 		}
 		V oldValue = valueTable[loc];
-		while ((key = keyTable[loc + 1 & mask]) != 0 && (loc + 1 & mask) != place(key)) {
+		int nl = (loc + 1 & mask);
+		while ((key = keyTable[nl]) != 0 && nl != place(key)) {
 			keyTable[loc] = key;
-			valueTable[loc] = valueTable[++loc & mask];
+			valueTable[loc] = valueTable[nl];
+			loc = nl;
+			nl = loc + 1 & mask;
 		}
 		keyTable[loc] = 0;
 		valueTable[loc] = null;
@@ -765,12 +767,13 @@ public class IntMap<V> implements Json.Serializable, Iterable<IntMap.Entry<V>> {
 			} else {
 				int[] keyTable = map.keyTable;
 				V[] valueTable = map.valueTable;
-				int loc = currentIndex, key;
 				final int mask = map.mask;
-				while ((key = keyTable[loc + 1 & mask]) != 0 && (loc + 1 & mask) != map.place(key)) {
+				int loc = currentIndex, nl = (loc + 1 & mask), key;
+				while ((key = keyTable[nl]) != 0 && nl != map.place(key)) {
 					keyTable[loc] = key;
-					valueTable[loc] = valueTable[loc + 1 & mask];
-					++loc;
+					valueTable[loc] = valueTable[nl];
+					loc = nl;
+					nl = loc + 1 & mask;
 				}
 				if(loc != currentIndex) --nextIndex;
 				keyTable[loc] = 0;
