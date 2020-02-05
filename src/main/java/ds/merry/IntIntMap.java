@@ -452,7 +452,7 @@ public class IntIntMap implements Json.Serializable, Iterable<IntIntMap.Entry> {
 		valueTable = new int[newSize];
 		
 		int oldSize = size;
-		size = 0;
+		size = hasZeroValue ? 1 : 0;
 		if (oldSize > 0) {
 			for (int i = 0; i < oldCapacity; i++) {
 				int key = oldKeyTable[i];
