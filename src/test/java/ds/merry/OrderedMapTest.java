@@ -57,12 +57,14 @@ public class OrderedMapTest {
 		// Test for method com.github.tommyettinger.merry.OrderedMap(int)
 		OrderedMap hm2 = new OrderedMap(5);
 		Assert.assertEquals("Created incorrect OrderedMap", 0, hm2.size);
-		try {
-			new OrderedMap(-1);
-		} catch (IllegalArgumentException e) {
-			return;
-		}
-		Assert.fail("Failed to throw IllegalArgumentException for initial capacity < 0");
+		do{
+			try {
+				new OrderedMap(-1);
+			} catch (IllegalArgumentException e) {
+				break;
+			}
+			Assert.fail("Failed to throw IllegalArgumentException for initial capacity < 0");
+		}while (false);
 
 		OrderedMap empty = new OrderedMap(0);
 		Assert.assertNull("Empty OrderedMap access", empty.get("nothing"));
@@ -74,12 +76,14 @@ public class OrderedMapTest {
 		// Test for method com.github.tommyettinger.merry.OrderedMap(int, float)
 		OrderedMap hm2 = new OrderedMap(5, (float)0.5);
 		Assert.assertEquals("Created incorrect OrderedMap", 0, hm2.size);
-		try {
-			new OrderedMap(0, 0);
-		} catch (IllegalArgumentException e) {
-			return;
-		}
-		Assert.fail("Failed to throw IllegalArgumentException for initial load factor <= 0");
+		do{
+			try {
+				new OrderedMap(0, 0);
+			} catch (IllegalArgumentException e) {
+				break;
+			}
+			Assert.fail("Failed to throw IllegalArgumentException for initial load factor <= 0");
+		}while (false);
 		OrderedMap empty = new OrderedMap(0, 0.75f);
 		Assert.assertNull("Empty hashtable access", empty.get("nothing"));
 		empty.put("something", "here");

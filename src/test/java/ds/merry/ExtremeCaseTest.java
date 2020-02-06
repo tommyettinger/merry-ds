@@ -36,7 +36,7 @@ public class ExtremeCaseTest {
 		for (int i = -1000; i < 1000; i++) {
 			malices.add(new Malice(i));
 		}
-		System.out.println("Inserted " + malices.size + " items of Malice");
+//		System.out.println("Inserted " + malices.size + " items of Malice");
 		Assert.assertTrue("Successfully removed item -1000", malices.remove(new Malice(-1000)));
 		Assert.assertTrue("Successfully removed item -100", malices.remove(new Malice(-100)));
 		Assert.assertTrue("Successfully removed item -10", malices.remove(new Malice(-10)));
@@ -58,7 +58,7 @@ public class ExtremeCaseTest {
 		}
 		Assert.assertTrue("Later item was missing", malices.contains(new Malice(500)));
 		Assert.assertEquals("Iteration length was incorrect", i, 1000);
-		System.out.println("Finished with size " + malices.size);
+//		System.out.println("Finished with size " + malices.size);
 	}
 	@Test public void testObjectMap()
 	{
@@ -66,7 +66,7 @@ public class ExtremeCaseTest {
 		for (int i = -1000; i < 1000; i++) {
 			malices.put(new Malice(i), i);
 		}
-		System.out.println("Inserted " + malices.size + " items of Malice");
+//		System.out.println("Inserted " + malices.size + " items of Malice");
 		Assert.assertNotNull("Successfully removed item -1000", malices.remove(new Malice(-1000)));
 		Assert.assertNotNull("Successfully removed item -100", malices.remove(new Malice(-100)));
 		Assert.assertNotNull("Successfully removed item -10", malices.remove(new Malice(-10)));
@@ -92,6 +92,6 @@ public class ExtremeCaseTest {
 		}
 		Assert.assertTrue("Later item was missing", malices.containsKey(new Malice(500)));
 		Assert.assertEquals("Iteration length was incorrect", i, 1000);
-		System.out.println("Finished with size " + malices.size);
+//		System.out.println("Finished with size " + malices.size);
 	}
 }

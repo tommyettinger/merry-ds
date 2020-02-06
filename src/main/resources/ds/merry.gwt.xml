@@ -7,6 +7,6 @@
      <inherits name="ds.merry" />
   -->
 <module>
-    <source path=""/>
+    <source path="merry"/>
     <inherits name="com.badlogic.gdx.backends.gdx_backends_gwt" />
 </module>

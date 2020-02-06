@@ -92,8 +92,9 @@ Usage
 -----
 
 See Maven Central, which despite the name, has Gradle instructions as well as Maven.
-The first stable release should be [up here shortly](https://search.maven.org/search?q=com.github.tommyettinger).
-You may need to change their recommended `implementation` keyword to `api`.
+The latest stable release should be [in this version list on Maven Central](https://search.maven.org/artifact/com.github.tommyettinger/merry);
+0.3.1 (or higher, if available) is recommended.
+You may need to change their recommended `implementation` keyword to `api` if using recent Gradle.
 
 Footnote
 -------

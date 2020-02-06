@@ -14,7 +14,7 @@ public class JsonTest {
 		ObjectSet<String> set = ObjectSet
 			.with("Robin", "Hood", "and his band of", "Merry", "Men");
 		String pretty = json.prettyPrint(set);
-		System.out.println(pretty);
+//		System.out.println(pretty);
 		ObjectSet from = json.fromJson(ObjectSet.class, pretty);
 		Assert.assertEquals(from, set);
 	}
@@ -24,7 +24,7 @@ public class JsonTest {
 		OrderedSet<String> set = OrderedSet
 			.with("Robin", "Hood", "and his band of", "Merry", "Men");
 		String pretty = json.prettyPrint(set);
-		System.out.println(pretty);
+//		System.out.println(pretty);
 		OrderedSet from = json.fromJson(OrderedSet.class, pretty);
 		Assert.assertEquals(from, set);
 	}
@@ -38,7 +38,7 @@ public class JsonTest {
 		map.put("Merry", 3);
 		map.put("Men", 4);
 		String pretty = json.prettyPrint(map);
-		System.out.println(pretty);
+//		System.out.println(pretty);
 		ObjectMap from = json.fromJson(ObjectMap.class, pretty);
 		Assert.assertEquals(from, map);
 	}
@@ -52,7 +52,7 @@ public class JsonTest {
 		map.put(3, "Merry");
 		map.put(4, "Men");
 		String pretty = json.prettyPrint(map);
-		System.out.println(pretty);
+//		System.out.println(pretty);
 		ObjectMap from = json.fromJson(ObjectMap.class, pretty);
 		Assert.assertEquals(from, map);
 	}
@@ -66,7 +66,7 @@ public class JsonTest {
 		map.put("Merry", 3);
 		map.put("Men", 4);
 		String pretty = json.prettyPrint(map);
-		System.out.println(pretty);
+//		System.out.println(pretty);
 		OrderedMap from = json.fromJson(OrderedMap.class, pretty);
 		Assert.assertEquals(from, map);
 	}
@@ -80,7 +80,7 @@ public class JsonTest {
 		map.put(3, "Merry");
 		map.put(4, "Men");
 		String pretty = json.prettyPrint(map);
-		System.out.println(pretty);
+//		System.out.println(pretty);
 		OrderedMap from = json.fromJson(OrderedMap.class, pretty);
 		Assert.assertEquals(from, map);
 	}
@@ -89,7 +89,7 @@ public class JsonTest {
 		Json json = new Json();
 		IntSet set = IntSet.with(42, 0, 23, 1337, 9001, -111, -2147483648);
 		String pretty = json.prettyPrint(set);
-		System.out.println(pretty);
+//		System.out.println(pretty);
 		IntSet from = json.fromJson(IntSet.class, pretty);
 		Assert.assertEquals(from, set);
 	}
@@ -103,7 +103,7 @@ public class JsonTest {
 		map.put(3, "Merry");
 		map.put(4, "Men");
 		String pretty = json.prettyPrint(map);
-		System.out.println(pretty);
+//		System.out.println(pretty);
 		IntMap from = json.fromJson(IntMap.class, pretty);
 		Assert.assertEquals(from, map);
 	}
@@ -117,7 +117,7 @@ public class JsonTest {
 		map.put(3, 1337);
 		map.put(4, -2147483648);
 		String pretty = json.prettyPrint(map);
-		System.out.println(pretty);
+//		System.out.println(pretty);
 		IntIntMap from = json.fromJson(IntIntMap.class, pretty);
 		Assert.assertEquals(from, map);
 	}
@@ -131,7 +131,7 @@ public class JsonTest {
 		map.put(3, 1337.1337f);
 		map.put(4, Float.NEGATIVE_INFINITY);
 		String pretty = json.prettyPrint(map);
-		System.out.println(pretty);
+//		System.out.println(pretty);
 		IntFloatMap from = json.fromJson(IntFloatMap.class, pretty);
 		Assert.assertEquals(from, map);
 	}
@@ -145,7 +145,7 @@ public class JsonTest {
 		map.put(0x1337BEEFC0DEDEAL, "Merry");
 		map.put(Long.MIN_VALUE, "Men");
 		String pretty = json.prettyPrint(map);
-		System.out.println(pretty);
+//		System.out.println(pretty);
 		LongMap from = json.fromJson(LongMap.class, pretty);
 		Assert.assertEquals(from, map);
 	}
@@ -163,7 +163,7 @@ public class JsonTest {
 		map.put(new Integer(256), "Merry");
 		map.put(new Integer(256), "Men");
 		String pretty = json.prettyPrint(map);
-		System.out.println(pretty);
+//		System.out.println(pretty);
 		IdentityMap from = json.fromJson(IdentityMap.class, pretty);
 		Assert.assertEquals(from, map);
 	}
@@ -177,7 +177,7 @@ public class JsonTest {
 		map.put("Merry", 3);
 		map.put("Men", 4);
 		String pretty = json.prettyPrint(map);
-		System.out.println(pretty);
+//		System.out.println(pretty);
 		ObjectIntMap from = json.fromJson(ObjectIntMap.class, pretty);
 		Assert.assertEquals(from, map);
 	}
@@ -191,7 +191,7 @@ public class JsonTest {
 		map.put("Merry", 1337.1337f);
 		map.put("Men", Float.NEGATIVE_INFINITY);
 		String pretty = json.prettyPrint(map);
-		System.out.println(pretty);
+//		System.out.println(pretty);
 		ObjectFloatMap from = json.fromJson(ObjectFloatMap.class, pretty);
 		Assert.assertEquals(from, map);
 	}

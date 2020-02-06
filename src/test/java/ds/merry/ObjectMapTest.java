@@ -114,12 +114,14 @@ public class ObjectMapTest {
 		// Test for method com.github.tommyettinger.merry.ObjectMap(int)
 		ObjectMap hm2 = new ObjectMap(5);
 		Assert.assertEquals("Created incorrect ObjectMap", 0, hm2.size);
-		try {
-			new ObjectMap(-1);
-		} catch (IllegalArgumentException e) {
-			return;
-		}
-		Assert.fail("Failed to throw IllegalArgumentException for initial capacity < 0");
+		do{
+			try {
+				new ObjectMap(-1);
+			} catch (IllegalArgumentException e) {
+				break;
+			}
+			Assert.fail("Failed to throw IllegalArgumentException for initial capacity < 0");
+		}while (false);
 
 		ObjectMap empty = new ObjectMap(0);
 		Assert.assertNull("Empty hashmap access", empty.get("nothing"));
@@ -131,12 +133,14 @@ public class ObjectMapTest {
 		// Test for method com.github.tommyettinger.merry.ObjectMap(int, float)
 		ObjectMap hm2 = new ObjectMap(5, (float)0.5);
 		Assert.assertEquals("Created incorrect ObjectMap", 0, hm2.size);
-		try {
-			new ObjectMap(0, 0);
-		} catch (IllegalArgumentException e) {
-			return;
-		}
-		Assert.fail("Failed to throw IllegalArgumentException for initial load factor <= 0");
+		do{
+			try {
+				new ObjectMap(0, 0);
+			} catch (IllegalArgumentException e) {
+				break;
+			}
+			Assert.fail("Failed to throw IllegalArgumentException for initial load factor <= 0");
+		}while (false);
 
 		ObjectMap empty = new ObjectMap(0, 0.75f);
 		Assert.assertNull("Empty hashtable access", empty.get("nothing"));
