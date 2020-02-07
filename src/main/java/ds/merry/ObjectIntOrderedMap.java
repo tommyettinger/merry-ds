@@ -19,15 +19,17 @@ package ds.merry;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Collections;
 import com.badlogic.gdx.utils.GdxRuntimeException;
+import com.badlogic.gdx.utils.IntArray;
 
 import java.util.NoSuchElementException;
 
 /**
- * A {@link ObjectMap} that also stores keys in an {@link Array} using the insertion order. Iteration over the
+ * A {@link ObjectIntMap} that also stores keys in an {@link Array} using the insertion order; like ObjectIntMap, keys
+ * are objects and values are primitive ints, which can save time and memory. Iteration over the
  * {@link #entries()}, {@link #keys()}, and {@link #values()} is ordered and faster than an unordered map. Keys can also
  * be accessed and the order changed using {@link #orderedKeys()}. There is some additional overhead for put and remove.
- * When used for faster iteration versus ObjectMap and the order does not actually matter, copying during remove
- * can be greatly reduced by setting {@link Array#ordered} to false for {@link OrderedMap#orderedKeys()}.
+ * When used for faster iteration versus ObjectIntMap and the order does not actually matter, copying during remove
+ * can be greatly reduced by setting {@link Array#ordered} to false for {@link ObjectIntOrderedMap#orderedKeys()}.
  * <br>
  * This map uses Fibonacci hashing to help distribute what may be very bad hashCode() results across the whole capacity.
  * See <a href="https://probablydance.com/2018/06/16/fibonacci-hashing-the-optimization-that-the-world-forgot-or-a-better-alternative-to-integer-modulo/">Malte Skarupke's blog post</a>
@@ -44,47 +46,45 @@ import java.util.NoSuchElementException;
  * <br>
  * The <a href="http://codecapsule.com/2013/11/17/robin-hood-hashing-backward-shift-deletion/">backward-shift algorithm</a>
  * used during removal apparently is key to the good performance of this implementation, even though this doesn't use Robin Hood
- * hashing; the performance of {@link #remove(Object)} has improved considerably over the previous libGDX version.
+ * hashing; the performance of {@link #remove(Object, int)} has improved considerably over the previous libGDX version.
  * <br>
- * Iteration should be fast with OrderedSet and OrderedMap, whereas ObjectSet and ObjectMap aren't designed to provide especially
- * quick iteration.
+ * Iteration should be faster with ObjectIntOrderedMap than with ObjectIntMap.
  *
  * @author Tommy Ettinger
  * @author Nathan Sweet
  */
-public class OrderedMap<K, V> extends ObjectMap<K, V> {
+public class ObjectIntOrderedMap<K> extends ObjectIntMap<K> {
 	private final Array<K> keys;
 
-	public OrderedMap () {
+	public ObjectIntOrderedMap () {
 		keys = new Array();
 	}
 
-	public OrderedMap (int initialCapacity) {
+	public ObjectIntOrderedMap (int initialCapacity) {
 		super(initialCapacity);
 		keys = new Array(initialCapacity);
 	}
 
-	public OrderedMap (int initialCapacity, float loadFactor) {
+	public ObjectIntOrderedMap (int initialCapacity, float loadFactor) {
 		super(initialCapacity, loadFactor);
 		keys = new Array(initialCapacity);
 	}
 
-	public OrderedMap (OrderedMap<? extends K, ? extends V> map) {
+	public ObjectIntOrderedMap (ObjectIntOrderedMap<? extends K> map) {
 		super(map);
 		keys = new Array(map.keys);
 	}
 
-	public V put (K key, V value) {
+	public void put (K key, int value) {
 		if (key == null)
 			throw new IllegalArgumentException("key cannot be null.");
-		V[] valueTable = this.valueTable;
+		int[] valueTable = this.valueTable;
 		int b = place(key);
 		int loc = locateKey(key, b);
 		// an identical key already exists
 		if (loc != -1) {
-			V tv = valueTable[loc];
 			valueTable[loc] = value;
-			return tv;
+			return;
 		}
 		keys.add(key);
 		K[] keyTable = this.keyTable;
@@ -99,26 +99,25 @@ public class OrderedMap<K, V> extends ObjectMap<K, V> {
 		if (++size >= threshold) {
 			resize(keyTable.length << 1);
 		}
-		return null;
 	}
 
-	public void putAll (OrderedMap<K, V> map) {
+	public void putAll (ObjectIntOrderedMap<K> map) {
 		ensureCapacity(map.size);
 		keys.ensureCapacity(map.size);
 		final K[] keys = map.keys.items;
 		K k;
 		for (int i = 0, n = map.keys.size; i < n; i++) {
-			put((k = keys[i]), map.get(k));
+			put((k = keys[i]), map.get(k, 0));
 		}
 	}
 
-	public V remove (K key) {
+	public int remove (K key, int defaultValue) {
 		keys.removeValue(key, false);
-		return super.remove(key);
+		return super.remove(key, defaultValue);
 	}
 
-	public V removeIndex (int index) {
-		return super.remove(keys.removeIndex(index));
+	public int removeIndex (int index) {
+		return super.remove(keys.removeIndex(index), 0);
 	}
 
 	/**
@@ -138,7 +137,7 @@ public class OrderedMap<K, V> extends ObjectMap<K, V> {
 		final int index = keys.indexOf(before, false);
 		if(index == -1)
 			return false;
-		super.put(after, super.remove(before));
+		super.put(after, super.remove(before, 0));
 		keys.set(index, after);
 		return true;
 	}
@@ -156,7 +155,7 @@ public class OrderedMap<K, V> extends ObjectMap<K, V> {
 	{
 		if(index < 0 || index >= size || containsKey(after))
 			return false;
-		super.put(after, super.remove(keys.get(index)));
+		super.put(after, super.remove(keys.get(index), 0));
 		keys.set(index, after);
 		return true;
 	}
@@ -175,7 +174,7 @@ public class OrderedMap<K, V> extends ObjectMap<K, V> {
 		return keys;
 	}
 
-	public Entries<K, V> iterator () {
+	public Entries<K> iterator () {
 		return entries();
 	}
 
@@ -185,7 +184,7 @@ public class OrderedMap<K, V> extends ObjectMap<K, V> {
 	 * If {@link Collections#allocateIterators} is false, the same iterator instance is returned each time this method is called.
 	 * Use the {@link OrderedMapEntries} constructor for nested or multithreaded iteration.
 	 */
-	public Entries<K, V> entries () {
+	public Entries<K> entries () {
 		if (Collections.allocateIterators)
 			return new OrderedMapEntries(this);
 		if (entries1 == null) {
@@ -210,7 +209,7 @@ public class OrderedMap<K, V> extends ObjectMap<K, V> {
 	 * If {@link Collections#allocateIterators} is false, the same iterator instance is returned each time this method is called.
 	 * Use the {@link OrderedMapValues} constructor for nested or multithreaded iteration.
 	 */
-	public Values<V> values () {
+	public Values values () {
 		if (Collections.allocateIterators)
 			return new OrderedMapValues(this);
 		if (values1 == null) {
@@ -266,16 +265,16 @@ public class OrderedMap<K, V> extends ObjectMap<K, V> {
 				buffer.append(", ");
 			buffer.append(key);
 			buffer.append('=');
-			buffer.append(get(key));
+			buffer.append(get(key, 0));
 		}
 		buffer.append('}');
 		return buffer.toString();
 	}
 
-	static public class OrderedMapEntries<K, V> extends Entries<K, V> {
+	static public class OrderedMapEntries<K> extends Entries<K> {
 		private Array<K> keys;
 
-		public OrderedMapEntries (OrderedMap<K, V> map) {
+		public OrderedMapEntries (ObjectIntOrderedMap<K> map) {
 			super(map);
 			keys = map.keys;
 		}
@@ -293,7 +292,7 @@ public class OrderedMap<K, V> extends ObjectMap<K, V> {
 				throw new GdxRuntimeException("#iterator() cannot be used nested.");
 			currentIndex = nextIndex;
 			entry.key = keys.get(nextIndex);
-			entry.value = map.get(entry.key);
+			entry.value = map.get(entry.key, 0);
 			nextIndex++;
 			hasNext = nextIndex < map.size;
 			return entry;
@@ -302,7 +301,7 @@ public class OrderedMap<K, V> extends ObjectMap<K, V> {
 		public void remove () {
 			if (currentIndex < 0)
 				throw new IllegalStateException("next must be called before remove.");
-			map.remove(entry.key);
+			map.remove(entry.key, 0);
 			nextIndex--;
 			currentIndex = -1;
 		}
@@ -311,7 +310,7 @@ public class OrderedMap<K, V> extends ObjectMap<K, V> {
 	static public class OrderedMapKeys<K> extends Keys<K> {
 		private Array<K> keys;
 
-		public OrderedMapKeys (OrderedMap<K, ?> map) {
+		public OrderedMapKeys (ObjectIntOrderedMap<K> map) {
 			super(map);
 			keys = map.keys;
 		}
@@ -337,7 +336,7 @@ public class OrderedMap<K, V> extends ObjectMap<K, V> {
 		public void remove () {
 			if (currentIndex < 0)
 				throw new IllegalStateException("next must be called before remove.");
-			((OrderedMap)map).removeIndex(currentIndex);
+			((ObjectIntOrderedMap)map).removeIndex(currentIndex);
 			nextIndex = currentIndex;
 			currentIndex = -1;
 		}
@@ -354,10 +353,10 @@ public class OrderedMap<K, V> extends ObjectMap<K, V> {
 		}
 	}
 
-	static public class OrderedMapValues<V> extends Values<V> {
+	static public class OrderedMapValues extends Values {
 		private Array keys;
 
-		public OrderedMapValues (OrderedMap<?, V> map) {
+		public OrderedMapValues (ObjectIntOrderedMap<?> map) {
 			super(map);
 			keys = map.keys;
 		}
@@ -368,12 +367,12 @@ public class OrderedMap<K, V> extends ObjectMap<K, V> {
 			hasNext = map.size > 0;
 		}
 
-		public V next () {
+		public int next () {
 			if (!hasNext)
 				throw new NoSuchElementException();
 			if (!valid)
 				throw new GdxRuntimeException("#iterator() cannot be used nested.");
-			V value = map.get(keys.get(nextIndex));
+			int value = map.get(keys.get(nextIndex), 0);
 			currentIndex = nextIndex;
 			nextIndex++;
 			hasNext = nextIndex < map.size;
@@ -383,25 +382,25 @@ public class OrderedMap<K, V> extends ObjectMap<K, V> {
 		public void remove () {
 			if (currentIndex < 0)
 				throw new IllegalStateException("next must be called before remove.");
-			((OrderedMap)map).removeIndex(currentIndex);
+			((ObjectIntOrderedMap)map).removeIndex(currentIndex);
 			nextIndex = currentIndex;
 			currentIndex = -1;
 		}
 
-		public Array<V> toArray (Array<V> array) {
+		public IntArray toArray (IntArray array) {
 			int n = keys.size;
 			array.ensureCapacity(n - nextIndex);
 			Object[] keys = this.keys.items;
 			for (int i = nextIndex; i < n; i++)
-				array.add(map.get(keys[i]));
+				array.add(map.get(keys[i], 0));
 			currentIndex = n - 1;
 			nextIndex = n;
 			hasNext = false;
 			return array;
 		}
 
-		public Array<V> toArray () {
-			return toArray(new Array(true, keys.size - nextIndex));
+		public IntArray toArray () {
+			return toArray(new IntArray(true, keys.size - nextIndex));
 		}
 	}
 }
