@@ -246,9 +246,7 @@ public class ObjectIntMap<K> implements Json.Serializable, Iterable<ObjectIntMap
 				break;
 			}
 		}
-		if (++size >= threshold) {
-			resize(keyTable.length << 1);
-		}
+		++size;
 	}
 
 	/**

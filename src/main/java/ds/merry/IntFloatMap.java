@@ -270,9 +270,7 @@ public class IntFloatMap implements Json.Serializable, Iterable<IntFloatMap.Entr
 				keyTable[i] = key;
 				valueTable[i] = value;
 				
-				if (++size >= threshold) {
-					resize(keyTable.length << 1);
-				}
+				++size;
 				return;
 			}
 		}

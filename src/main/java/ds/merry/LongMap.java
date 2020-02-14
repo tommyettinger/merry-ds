@@ -266,10 +266,7 @@ public class LongMap<V> implements Json.Serializable, Iterable<LongMap.Entry<V>>
 			if (keyTable[i] == 0) {
 				keyTable[i] = key;
 				valueTable[i] = value;
-
-				if (++size >= threshold) {
-					resize(keyTable.length << 1);
-				}
+				++size;
 				return;
 			}
 		}

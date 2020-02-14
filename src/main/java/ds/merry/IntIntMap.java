@@ -266,9 +266,7 @@ public class IntIntMap implements Json.Serializable, Iterable<IntIntMap.Entry> {
 				keyTable[i] = key;
 				valueTable[i] = value;
 
-				if (++size >= threshold) {
-					resize(keyTable.length << 1);
-				}
+				++size;
 				return;
 			}
 		}

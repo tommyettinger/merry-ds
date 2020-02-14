@@ -255,9 +255,7 @@ public class ObjectFloatMap<K> implements Json.Serializable, Iterable<ObjectFloa
 				break;
 			}
 		}
-		if (++size >= threshold) {
-			resize(keyTable.length << 1);
-		}
+		++size;
 	}
 
 	/**

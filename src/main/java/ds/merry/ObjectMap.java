@@ -249,9 +249,7 @@ public class ObjectMap<K, V> implements Json.Serializable, Iterable<ObjectMap.En
 				break;
 			}
 		}
-		if (++size >= threshold) {
-			resize(keyTable.length << 1);
-		}
+		++size;
 	}
 
 	/**

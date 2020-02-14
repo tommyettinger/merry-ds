@@ -22,68 +22,11 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 
 public class ObjectMapTest {
-	class MockMap extends ObjectMap {
-		public Entries entries () {
-			return null;
-		}
-
-		public int size () {
-			return 0;
-		}
-	}
-
-	private static class MockMapNull extends ObjectMap {
-		public Entries entries () {
-			return null;
-		}
-
-		public int size () {
-			return 10;
-		}
-	}
-
-	interface MockInterface {
-		public String mockMethod ();
-	}
-
-	class MockClass implements MockInterface {
-		public String mockMethod () {
-			return "This is a MockClass";
-		}
-	}
-
-	class MockHandler implements InvocationHandler {
-
-		Object obj;
-
-		public MockHandler (Object o) {
-			obj = o;
-		}
-
-		public Object invoke (Object proxy, Method m, Object[] args) throws Throwable {
-
-			Object result = null;
-
-			try {
-
-				result = m.invoke(obj, args);
-
-			} catch (Exception e) {
-				e.printStackTrace();
-			} finally {
-
-			}
-			return result;
-		}
-
-	}
 
 	ObjectMap hm;
 
@@ -93,11 +36,11 @@ public class ObjectMapTest {
 
 	static Object[] objArray2;
 
-	{
+	static {
 		objArray = new Object[hmSize];
 		objArray2 = new Object[hmSize];
 		for (int i = 0; i < objArray.length; i++) {
-			objArray[i] = new Integer(i);
+			objArray[i] = i;
 			objArray2[i] = objArray[i].toString();
 		}
 	}
@@ -469,19 +412,8 @@ public class ObjectMapTest {
 			values[i] = Integer.toString(i);
 			map.put(i, values[i]);
 		}
-//        Integer problem = map.findKey("15056", false);
-//		 System.out.println(problem);
-//		 int loc = map.locateKey(problem,  map.place(problem));
-//		 System.out.println("Initial problem value: " + ((Object[])map.keyTable)[loc] + ", loc = " + loc);
 		for (int i = 32767; i >= 0; i--) {
 			Object obj = map.remove(i);
-//        	 loc = map.locateKey(problem,  map.place(problem));
-//        	 if(loc < 0)
-//				  System.out.println("Problem value not found when i == " + i);
-//        	 else if(((Object[])map.keyTable)[loc] == null)
-//				  System.out.println("Problem value changed when i == " + i);
-			if (!values[i].equals(obj))
-				System.out.println("i is " + i);
 			Assert.assertEquals("Failed to remove same value", values[i], obj);
 		}
 
@@ -619,21 +551,6 @@ public class ObjectMapTest {
 
 		//entrySet.remove(copyEntry);
 		//assertFalse(entrySet.contains(copyEntry));
-	}
-
-	private static class MockEntry extends ObjectMap.Entry {
-
-		public Object getKey () {
-			return new Integer(1);
-		}
-
-		public Object getValue () {
-			return "ONE";
-		}
-
-		public Object setValue (Object object) {
-			return null;
-		}
 	}
 
 	/**

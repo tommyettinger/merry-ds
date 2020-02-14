@@ -222,9 +222,7 @@ public class IntSet implements Json.Serializable {
 			if (keyTable[i] == 0) {
 				keyTable[i] = key;
 
-				if (++size >= threshold) {
-					resize(keyTable.length << 1);
-				}
+				++size;
 				return;
 			}
 		}

@@ -256,9 +256,7 @@ public class ObjectSet<T> implements Json.Serializable, Iterable<T> {
 				break;
 			}
 		}
-		if (++size >= threshold) {
-			resize(keyTable.length << 1);
-		}
+		++size;
 	}
 
 	/**
