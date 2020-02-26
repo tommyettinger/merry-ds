@@ -106,7 +106,7 @@ public class ObjectIntMap<K> implements Iterable<ObjectIntMap.Entry<K>> {
 		size = map.size;
 	}
 
-	/** Returns an index >= 0 and <= {@link #mask} for the specified {@code item}.
+	/** Returns an index greater than or equal to 0 and less than or equal to {@link #mask} for the specified {@code item}.
 	 * <p>
 	 * The default implementation uses Fibonacci hashing on the item's {@link Object#hashCode()}: the hashcode is multiplied by a
 	 * long constant (2 to the 64th, divided by the golden ratio) then the uppermost bits are shifted into the lowest positions to
