@@ -217,11 +217,14 @@ public class LongMap<V> implements Iterable<LongMap.Entry<V>> {
 		long[] keyTable = this.keyTable;
 		V[] valueTable = this.valueTable;
 		V oldValue = valueTable[i];
-		int next = i + 1 & mask;
-		while ((key = keyTable[next]) != 0 && next != place(key)) {
-			keyTable[i] = key;
-			valueTable[i] = valueTable[next];
-			i = next;
+		int next = i + 1 & mask, placement;
+		while ((key = keyTable[next]) != 0) {
+			placement = place(key);
+			if((next - placement & mask) > (i - placement & mask)) {
+				keyTable[i] = key;
+				valueTable[i] = valueTable[next];
+				i = next;
+			}
 			next = next + 1 & mask;
 		}
 		keyTable[i] = 0;
@@ -566,12 +569,15 @@ public class LongMap<V> implements Iterable<LongMap.Entry<V>> {
 			} else {
 				long[] keyTable = map.keyTable;
 				V[] valueTable = map.valueTable;
-				int mask = map.mask, next = i + 1 & mask;
+				int mask = map.mask, next = i + 1 & mask, placement;
 				long key;
-				while ((key = keyTable[next]) != 0 && next != map.place(key)) {
-					keyTable[i] = key;
-					valueTable[i] = valueTable[next];
-					i = next;
+				while ((key = keyTable[next]) != 0) {
+					placement = map.place(key);
+					if((next - placement & mask) > (i - placement & mask)) {
+						keyTable[i] = key;
+						valueTable[i] = valueTable[next];
+						i = next;
+					}
 					next = next + 1 & mask;
 				}
 				keyTable[i] = 0;
