@@ -217,7 +217,8 @@ public class LongMap<V> implements Iterable<LongMap.Entry<V>> {
 		long[] keyTable = this.keyTable;
 		V[] valueTable = this.valueTable;
 		V oldValue = valueTable[i];
-		int next = i + 1 & mask, placement;
+		int next = i + 1 & mask;
+		int placement;
 		while ((key = keyTable[next]) != 0) {
 			placement = place(key);
 			if((next - placement & mask) > (i - placement & mask)) {
@@ -569,8 +570,9 @@ public class LongMap<V> implements Iterable<LongMap.Entry<V>> {
 			} else {
 				long[] keyTable = map.keyTable;
 				V[] valueTable = map.valueTable;
-				int mask = map.mask, next = i + 1 & mask, placement;
+				int mask = map.mask, next = i + 1 & mask;
 				long key;
+				int placement;
 				while ((key = keyTable[next]) != 0) {
 					placement = map.place(key);
 					if((next - placement & mask) > (i - placement & mask)) {

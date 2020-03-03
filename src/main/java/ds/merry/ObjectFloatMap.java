@@ -206,10 +206,14 @@ public class ObjectFloatMap<K> implements Iterable<ObjectFloatMap.Entry<K>> {
 		float[] valueTable = this.valueTable;
 		float oldValue = valueTable[i];
 		int next = i + 1 & mask;
-		while ((key = keyTable[next]) != null && next != place(key)) {
-			keyTable[i] = key;
-			valueTable[i] = valueTable[next];
-			i = next;
+		int placement;
+		while ((key = keyTable[next]) != null) {
+			placement = place(key);
+			if((next - placement & mask) > (i - placement & mask)) {
+				keyTable[i] = key;
+				valueTable[i] = valueTable[next];
+				i = next;
+			}
 			next = next + 1 & mask;
 		}
 		keyTable[i] = null;
@@ -477,10 +481,14 @@ public class ObjectFloatMap<K> implements Iterable<ObjectFloatMap.Entry<K>> {
 			float[] valueTable = map.valueTable;
 			int mask = map.mask, next = i + 1 & mask;
 			K key;
-			while ((key = keyTable[next]) != null && next != map.place(key)) {
-				keyTable[i] = key;
-				valueTable[i] = valueTable[next];
-				i = next;
+			int placement;
+			while ((key = keyTable[next]) != null) {
+				placement = map.place(key);
+				if((next - placement & mask) > (i - placement & mask)) {
+					keyTable[i] = key;
+					valueTable[i] = valueTable[next];
+					i = next;
+				}
 				next = next + 1 & mask;
 			}
 			keyTable[i] = null;

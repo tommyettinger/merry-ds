@@ -230,12 +230,17 @@ public class IntIntMap implements Iterable<IntIntMap.Entry> {
 		int[] valueTable = this.valueTable;
 		int oldValue = valueTable[i];
 		int next = i + 1 & mask;
-		while ((key = keyTable[next]) != 0 && next != place(key)) {
-			keyTable[i] = key;
-			valueTable[i] = valueTable[next];
-			i = next;
+		int placement;
+		while ((key = keyTable[next]) != 0) {
+			placement = place(key);
+			if((next - placement & mask) > (i - placement & mask)) {
+				keyTable[i] = key;
+				valueTable[i] = valueTable[next];
+				i = next;
+			}
 			next = next + 1 & mask;
 		}
+
 		keyTable[i] = 0;
 		size--;
 		return oldValue;
@@ -525,13 +530,17 @@ public class IntIntMap implements Iterable<IntIntMap.Entry> {
 				int[] keyTable = map.keyTable;
 				int[] valueTable = map.valueTable;
 				int mask = map.mask, next = i + 1 & mask, key;
-				while ((key = keyTable[next]) != 0 && next != map.place(key)) {
-					keyTable[i] = key;
-					valueTable[i] = valueTable[next];
-					i = next;
+				int placement;
+				while ((key = keyTable[next]) != 0) {
+					placement = map.place(key);
+					if((next - placement & mask) > (i - placement & mask)) {
+						keyTable[i] = key;
+						valueTable[i] = valueTable[next];
+						i = next;
+					}
 					next = next + 1 & mask;
 				}
-				keyTable[i] = 0;
+keyTable[i] = 0;
 				if (i != currentIndex) --nextIndex;
 			}
 			currentIndex = INDEX_ILLEGAL;
