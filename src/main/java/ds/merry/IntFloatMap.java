@@ -194,7 +194,7 @@ public class IntFloatMap implements Iterable<IntFloatMap.Entry> {
 
 	/** Returns the key's current value and increments the stored value. If the key is not in the map, defaultValue + increment is
 	 * put into the map and defaultValue is returned. */
-	public float getAndIncrement (int key, int defaultValue, int increment) {
+	public float getAndIncrement (int key, float defaultValue, float increment) {
 		if (key == 0) {
 			if (!hasZeroValue) {
 				hasZeroValue = true;
@@ -243,7 +243,6 @@ public class IntFloatMap implements Iterable<IntFloatMap.Entry> {
 			}
 			next = next + 1 & mask;
 		}
-
 		keyTable[i] = 0;
 		size--;
 		return oldValue;
@@ -543,7 +542,7 @@ public class IntFloatMap implements Iterable<IntFloatMap.Entry> {
 					}
 					next = next + 1 & mask;
 				}
-keyTable[i] = 0;
+				keyTable[i] = 0;
 				if (i != currentIndex) --nextIndex;
 			}
 			currentIndex = INDEX_ILLEGAL;
